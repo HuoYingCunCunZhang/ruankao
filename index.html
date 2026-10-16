@@ -400,6 +400,15 @@ function renderChapter(id){
   if(c.quizSelf && c.quizSelf.length){
     html += '<button class="btn" onclick="go(\'#/quiz/'+c.id+'/self\')">✍️ 出题人自编题（'+c.quizSelf.length+' 题）'+(state.quiz[c.id+":self"]?' · 已练 '+chQuiz(c,"self"):'')+'</button>';
   }
+  if(c.quizOriginal && c.quizOriginal.essay && c.quizOriginal.essay.length){
+    html += '<div class="card"><div class="h2">📝 思考题 / 案例题（'+c.quizOriginal.essay.length+' 道 · 附参考要点）</div>';
+    c.quizOriginal.essay.forEach(function(e,i){
+      html += '<div class="quiz-q" style="font-size:14.5px">'+(i+1)+'. '+esc(e.q)+'</div>'
+        + '<details style="margin:6px 0 16px"><summary style="cursor:pointer;color:var(--brand);font-size:13px;font-weight:600">💡 查看参考要点</summary><div class="explain">'+md(e.answer)+'</div></details>';
+    });
+    html += '<div class="muted" style="font-size:12px">说明：教材对思考题/案例题标注「参考答案：略」，此处参考要点为备考助手整理，供对照自检。</div>';
+    html += '</div>';
+  }
   el("view-chapter").innerHTML = html;
   el("topTitle").textContent = "第"+c.num+"章 "+c.title;
 }
