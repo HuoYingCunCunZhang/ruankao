@@ -237,7 +237,8 @@ function allChapters(){ var a=[]; D.modules.forEach(function(m){ m.chapters.forE
 function findChapter(id){ for(var i=0;i<D.modules.length;i++){var cs=D.modules[i].chapters;for(var j=0;j<cs.length;j++){if(cs[j].id===id)return cs[j];}} return null; }
 function findSection(sid){ var ch=allChapters(); for(var i=0;i<ch.length;i++){var s=ch[i].sections;for(var j=0;j<s.length;j++){if(s[j].id===sid)return {ch:ch[i],sec:s[j]};}} return null; }
 function chDoneCount(c){ return c.sections.filter(function(s){return state.done[s.id];}).length; }
-function chQuiz(c){ var q=state.quiz[c.id]; if(!q)return null; return q.right+" / "+q.total; }
+function chQuiz(c, kind){ var q=state.quiz[c.id+":"+kind]; if(!q)return null; return q.right+" / "+q.total; }
+function chQuizTotal(c){ var n=0; if(c.quizOriginal&&c.quizOriginal.choice)n+=c.quizOriginal.choice.length; if(c.quizSelf)n+=c.quizSelf.length; return n; }
 
 function totalStats(){ var s=0,d=0; allChapters().forEach(function(c){ s+=c.sections.length; d+=chDoneCount(c); }); return {s:s,d:d}; }
 
@@ -304,7 +305,7 @@ function route(){
   if(view==="home") return renderHome();
   if(view==="ch" && parts[1]) return renderChapter(parts[1]);
   if(view==="sec" && parts[1] && parts[2]) return renderSection(parts[1], parts[2]);
-  if(view==="quiz" && parts[1]) return renderQuiz(parts[1]);
+  if(view==="quiz" && parts[1]) return renderQuiz(parts[1], parts[2] || "self");
   if(view==="search") return renderSearch();
   if(view==="settings") return renderSettings();
   renderHome();
@@ -348,7 +349,7 @@ function renderHome(){
     m.chapters.forEach(function(c){
       var cd = chDoneCount(c);
       var pill = c.status==="done" ? '<span class="pill done">已整理</span>' : c.status==="partial" ? '<span class="pill partial">整理中</span>' : '<span class="pill todo">待整理</span>';
-      var sub = c.sections.length ? cd+'/'+c.sections.length+' 节'+(state.quiz[c.id]?' · 自测 '+chQuiz(c):'') : '内容待填充';
+      var sub = c.sections.length ? cd+'/'+c.sections.length+' 节'+(chQuizTotal(c)?' · 题 '+chQuizTotal(c):'') : '内容待填充';
       html += '<div class="chapter-row" onclick="go(\'#/ch/'+c.id+'\')">'
         + '<div class="num">'+c.num+'</div>'
         + '<div class="cinfo"><div class="ctitle">'+esc(c.title)+'</div><div class="csub">'+sub+'</div></div>'
@@ -393,8 +394,11 @@ function renderChapter(id){
   } else {
     html += '<div class="empty"><span class="big">📝</span>本章内容待整理<br>（分章节任务逐个完成中）</div>';
   }
-  if(c.quiz && c.quiz.length){
-    html += '<button class="btn" onclick="go(\'#/quiz/'+c.id+'\')">📝 本章自测（'+c.quiz.length+' 题）'+(state.quiz[c.id]?' · '+chQuiz(c):'')+'</button>';
+  if(c.quizOriginal && c.quizOriginal.choice && c.quizOriginal.choice.length){
+    html += '<button class="btn" onclick="go(\'#/quiz/'+c.id+'/original\')">📗 教材原题（选择题 '+c.quizOriginal.choice.length+' 题'+(c.quizOriginal.essay&&c.quizOriginal.essay.length?' · 思考题 '+c.quizOriginal.essay.length+' 题':'')+'）'+(state.quiz[c.id+":original"]?' · 已练 '+chQuiz(c,"original"):'')+'</button>';
+  }
+  if(c.quizSelf && c.quizSelf.length){
+    html += '<button class="btn" onclick="go(\'#/quiz/'+c.id+'/self\')">✍️ 出题人自编题（'+c.quizSelf.length+' 题）'+(state.quiz[c.id+":self"]?' · 已练 '+chQuiz(c,"self"):'')+'</button>';
   }
   el("view-chapter").innerHTML = html;
   el("topTitle").textContent = "第"+c.num+"章 "+c.title;
@@ -428,24 +432,34 @@ function renderSection(chId, secId){
 }
 
 /* ---------- quiz ---------- */
-var quiz = { ch:null, list:[], idx:0, answers:[], done:false };
-function renderQuiz(id){
+var quiz = { ch:null, kind:null, list:[], essay:[], idx:0, answers:[], done:false };
+function renderQuiz(id, kind){
   show("quiz");
   var c = findChapter(id);
-  if(!c || !c.quiz || !c.quiz.length){ renderHome(); return; }
-  quiz = { ch:c, list:c.quiz.slice(), idx:0, answers:new Array(c.quiz.length).fill(-1), done:false };
-  // shuffle options deterministically? keep simple: no shuffle, but shuffle question order
+  if(!c){ renderHome(); return; }
+  kind = kind || "self";
+  var list = [], essay = [];
+  if(kind==="original" && c.quizOriginal){
+    list = (c.quizOriginal.choice||[]).slice();
+    essay = (c.quizOriginal.essay||[]).slice();
+  } else {
+    list = (c.quizSelf||[]).slice();
+  }
+  if(kind==="self" && !list.length && c.quizOriginal && c.quizOriginal.choice){ return renderQuiz(id, "original"); }
+  if(!list.length && !essay.length){ renderHome(); return; }
+  quiz = { ch:c, kind:kind, list:list, essay:essay, idx:0, answers:new Array(list.length).fill(-1), done:false };
   quiz.list.sort(function(){return Math.random()-0.5;});
-  el("topTitle").textContent = "自测 · 第"+c.num+"章";
+  el("topTitle").textContent = (kind==="original"?"📗 教材原题":"✍️ 自编题")+" · 第"+c.num+"章";
   drawQuiz();
 }
 function drawQuiz(){
+  if(!quiz.list.length){ finishQuiz(); return; }
   var q = quiz.list[quiz.idx];
   var picked = quiz.answers[quiz.idx];
   var html = '<div class="card">'
     + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
     + '<span class="pill gray">第 '+(quiz.idx+1)+' / '+quiz.list.length+' 题</span>'
-    + '<span class="pill gray">第'+quiz.ch.num+'章</span></div>'
+    + '<span class="pill gray">'+(quiz.kind==="original"?"📗 教材原题":"✍️ 自编题")+'</span></div>'
     + '<div class="quiz-q">'+esc(q.q)+'</div>'
     + q.opts.map(function(o,i){
         var cls = "opt";
@@ -468,20 +482,22 @@ function pickOpt(i){
   if(quiz.answers[quiz.idx]>=0) return;
   quiz.answers[quiz.idx]=i;
   var q = quiz.list[quiz.idx];
-  if(i!==q.a){ state.wrong.push({q:q.q,opts:q.opts,a:q.a,explain:q.explain,ch:quiz.ch.id,chName:quiz.ch.title}); }
+  if(i!==q.a){ state.wrong.push({q:q.q,opts:q.opts,a:q.a,explain:q.explain,ch:quiz.ch.id,chName:quiz.ch.title,kind:quiz.kind}); }
   drawQuiz();
 }
 function navQuiz(d){ quiz.idx += d; drawQuiz(); }
 function finishQuiz(){
   var right=0; quiz.list.forEach(function(q,i){ if(quiz.answers[i]===q.a) right++; });
-  var old = state.quiz[quiz.ch.id] || {right:0,total:0};
-  state.quiz[quiz.ch.id] = { right:(old.right||0)+right, total:(old.total||0)+quiz.list.length };
-  // dedupe wrong
+  var key = quiz.ch.id+":"+quiz.kind;
+  var old = state.quiz[key] || {right:0,total:0};
+  state.quiz[key] = { right:(old.right||0)+right, total:(old.total||0)+quiz.list.length };
   saveState();
+  var n = quiz.list.length || 1;
+  var pct = Math.round(right/n*100);
   var html = '<div class="card" style="text-align:center">'
-    + '<div style="font-size:48px">'+(right/quiz.list.length>=0.6?'🎉':'💪')+'</div>'
-    + '<div class="quiz-score">答对 '+right+' / '+quiz.list.length+' 题（'+(Math.round(right/quiz.list.length*100))+' 分）</div>'
-    + '<div class="muted">'+(right===quiz.list.length?'全部正确，太棒了！':right>=quiz.list.length*0.6?'不错，继续巩固！':'别灰心，错题会在「错题本」里复习。')+'</div></div>';
+    + '<div style="font-size:48px">'+(pct>=60?'🎉':'💪')+'</div>'
+    + '<div class="quiz-score">答对 '+right+' / '+quiz.list.length+' 题（'+pct+' 分）</div>'
+    + '<div class="muted">'+(right===quiz.list.length?'全部正确，太棒了！':pct>=60?'不错，继续巩固！':'别灰心，错题会在「错题本」里复习。')+'</div></div>';
   var wrong = quiz.list.map(function(q,i){return {q:q,i:i};}).filter(function(x){return quiz.answers[x.i]!==x.q.a;});
   if(wrong.length){
     html += '<div class="card"><div class="h2">❌ 错题回顾</div>';
@@ -491,8 +507,16 @@ function finishQuiz(){
     });
     html += '</div>';
   }
+  if(quiz.essay && quiz.essay.length){
+    html += '<div class="card"><div class="h2">📝 思考题（自我对照）</div>';
+    quiz.essay.forEach(function(e,i){
+      html += '<div class="quiz-q" style="font-size:14.5px">'+(i+1)+'. '+esc(e.q)+'</div>'
+        + '<details style="margin:6px 0 14px"><summary style="cursor:pointer;color:var(--brand);font-size:13px;font-weight:600">💡 查看参考要点</summary><div class="explain">'+md(e.answer)+'</div></details>';
+    });
+    html += '</div>';
+  }
   html += '<button class="btn" onclick="go(\'#/ch/'+quiz.ch.id+'\')">返回章节</button>'
-    + '<button class="btn ghost" onclick="renderQuiz(\''+quiz.ch.id+'\')">再做一遍</button>';
+    + '<button class="btn ghost" onclick="renderQuiz(\''+quiz.ch.id+'\',\''+quiz.kind+'\')">再做一遍</button>';
   el("view-quiz").innerHTML = html;
 }
 
@@ -567,7 +591,7 @@ function showWrong(){
   state.wrong.slice().reverse().forEach(function(w,i){
     html += '<div class="card"><div class="quiz-q" style="font-size:14.5px">'+esc(w.q)+'</div>'
       + '<div class="explain"><b>正确答案：</b>'+String.fromCharCode(65+w.a)+' · '+esc(w.opts[w.a])+'<br><b>解析：</b>'+esc(w.explain)+'</div>'
-      + '<div class="muted" style="margin-top:6px">来自第'+esc(w.chName)+'</div></div>';
+      + '<div class="muted" style="margin-top:6px">来自第'+esc(w.chName)+(w.kind==="original"?' · 📗教材原题':' · ✍️自编题')+'</div></div>';
   });
   html += '<button class="btn ghost" onclick="renderSettings()">返回</button>';
   el("view-settings").innerHTML = html;
@@ -597,7 +621,7 @@ document.querySelectorAll(".nav-item").forEach(function(n){
     var ch = findChapter(state.lastChapter) || allChapters()[3];
     if(nav==="home") go("#/");
     else if(nav==="chapter"){ go("#/ch/"+ch.id); }
-    else if(nav==="quiz"){ if(ch.quiz && ch.quiz.length) go("#/quiz/"+ch.id); else go("#/quiz/"+allChapters()[3].id); }
+    else if(nav==="quiz"){ go("#/quiz/"+ch.id+"/self"); }
     else if(nav==="settings") go("#/settings");
   };
 });
