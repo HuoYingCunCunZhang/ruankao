@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1f6feb">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="集成备考助手">
+<title>系统集成项目管理工程师 · 备考助手</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#f5f7fb; --card:#ffffff; --ink:#1a2233; --ink2:#5a6478; --ink3:#8a93a6;
+  --line:#e6eaf2; --brand:#1f6feb; --brand-soft:#e8f0fe; --accent:#0ea5a5;
+  --good:#16a34a; --good-soft:#e9f8ef; --warn:#d97706; --warn-soft:#fdf3e3;
+  --bad:#dc2626; --bad-soft:#fdeaea; --shadow:0 1px 2px rgba(20,30,60,.05),0 4px 16px rgba(20,30,60,.06);
+  --radius:16px; --radius-sm:10px;
+}
+[data-theme=dark]{
+  --bg:#0e1420; --card:#161d2c; --ink:#e8edf6; --ink2:#a7b1c5; --ink3:#6b7690;
+  --line:#232c40; --brand:#4c8dff; --brand-soft:#17233b; --accent:#2dd4bf;
+  --good:#34d399; --good-soft:#12281f; --warn:#fbbf24; --warn-soft:#2a2113;
+  --bad:#f87171; --bad-soft:#2c1818; --shadow:0 1px 2px rgba(0,0,0,.4),0 4px 16px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Segoe UI",Roboto,sans-serif;
+  font-size:16px; line-height:1.65; -webkit-font-smoothing:antialiased;
+}
+#app{max-width:760px;margin:0 auto;min-height:100vh;padding-bottom:calc(72px + env(safe-area-inset-bottom));}
+
+/* Top bar */
+.topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:8px;
+  padding:10px 14px;padding-top:calc(10px + env(safe-area-inset-top));
+  background:linear-gradient(135deg,#1f6feb,#2563eb);color:#fff;box-shadow:var(--shadow)}
+.topbar .back{width:36px;height:36px;border-radius:10px;border:none;background:rgba(255,255,255,.16);
+  color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none}
+.topbar .title{flex:1;font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar .icon-btn{width:36px;height:36px;border-radius:10px;border:none;background:rgba(255,255,255,.16);
+  color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none}
+
+/* Views */
+.view{display:none;padding:14px 14px 0;animation:fade .18s ease}
+.view.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* Cards & generic */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:16px;margin-bottom:12px;box-shadow:var(--shadow)}
+.h1{font-size:20px;font-weight:700;margin:4px 0 2px}
+.h2{font-size:17px;font-weight:700;margin:0 0 10px}
+.sub{color:var(--ink2);font-size:13px;margin:0 0 12px}
+.muted{color:var(--ink3);font-size:13px}
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;line-height:1.6}
+.pill.done{background:var(--good-soft);color:var(--good)}
+.pill.partial{background:var(--warn-soft);color:var(--warn)}
+.pill.todo{background:var(--line);color:var(--ink3)}
+.pill.gray{background:var(--brand-soft);color:var(--brand)}
+
+/* Progress */
+.progress-wrap{background:var(--line);border-radius:999px;height:8px;overflow:hidden}
+.progress-fill{background:linear-gradient(90deg,#1f6feb,#0ea5a5);height:100%;border-radius:999px;transition:width .3s}
+
+/* Module */
+.module-head{display:flex;align-items:baseline;gap:8px;margin-bottom:6px}
+.module-head .mtitle{font-size:16px;font-weight:700}
+.module-head .mrange{color:var(--ink3);font-size:12px}
+.module-logic{font-size:13px;color:var(--ink2);background:var(--brand-soft);border-radius:var(--radius-sm);
+  padding:10px 12px;margin:8px 0;line-height:1.55}
+.module-weight{font-size:12.5px;color:var(--warn);margin-bottom:4px}
+
+/* Chapter list */
+.chapter-row{display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:var(--radius-sm);
+  background:var(--card);border:1px solid var(--line);margin-bottom:10px;cursor:pointer;box-shadow:var(--shadow)}
+.chapter-row:active{transform:scale(.99)}
+.chapter-row .num{flex:none;width:40px;height:40px;border-radius:12px;background:var(--brand-soft);color:var(--brand);
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px}
+.chapter-row .cinfo{flex:1;min-width:0}
+.chapter-row .ctitle{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chapter-row .csub{font-size:12px;color:var(--ink3)}
+.chapter-row .arrow{color:var(--ink3)}
+
+/* Section list */
+.sec-row{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:var(--radius-sm);
+  border:1px solid var(--line);margin-bottom:8px;cursor:pointer;background:var(--card)}
+.sec-row .snum{flex:none;font-size:12px;font-weight:700;color:var(--brand);background:var(--brand-soft);
+  padding:3px 8px;border-radius:6px;min-width:44px;text-align:center}
+.sec-row .stitle{flex:1;font-size:14.5px;font-weight:500}
+.sec-row .tick{font-size:16px}
+
+/* Buttons */
+.btn{display:block;width:100%;text-align:center;padding:13px;border-radius:var(--radius-sm);border:none;
+  font-size:15px;font-weight:600;cursor:pointer;background:var(--brand);color:#fff;margin-bottom:10px}
+.btn.ghost{background:var(--card);color:var(--brand);border:1px solid var(--brand)}
+.btn.warn{background:var(--warn-soft);color:var(--warn);border:1px solid var(--warn)}
+.btn:active{opacity:.85}
+
+/* Markdown */
+.md h1,.md h2,.md h3,.md h4{margin:1.2em 0 .5em;line-height:1.35}
+.md h1{font-size:19px}.md h2{font-size:17px;border-left:4px solid var(--brand);padding-left:10px}
+.md h3{font-size:15.5px;color:var(--brand)}
+.md h4{font-size:14.5px}
+.md p{margin:.55em 0}
+.md strong{color:var(--ink);font-weight:700}
+.md em{color:var(--ink2)}
+.md ul,.md ol{margin:.5em 0;padding-left:22px}
+.md li{margin:.28em 0}
+.md blockquote{margin:.7em 0;padding:10px 14px;background:var(--brand-soft);border-left:3px solid var(--brand);
+  border-radius:0 var(--radius-sm) var(--radius-sm) 0;color:var(--ink)}
+.md hr{border:none;border-top:1px dashed var(--line);margin:1.2em 0}
+.md code{background:var(--line);padding:1px 6px;border-radius:5px;font-size:.9em;font-family:ui-monospace,Menlo,Consolas,monospace}
+.md table{width:100%;border-collapse:collapse;margin:.8em 0;font-size:13.5px;display:block;overflow-x:auto}
+.md th,.md td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top}
+.md th{background:var(--brand-soft);color:var(--ink);font-weight:600;white-space:nowrap}
+.md tr:nth-child(even) td{background:var(--bg)}
+.md .kbd{display:inline-block;background:var(--brand-soft);color:var(--brand);padding:1px 8px;border-radius:6px;
+  font-size:12.5px;font-weight:700;margin:0 2px}
+
+/* position tag */
+.position-tag{background:var(--warn-soft);border-left:3px solid var(--warn);border-radius:0 var(--radius-sm) var(--radius-sm) 0;
+  padding:11px 13px;font-size:13.5px;color:var(--ink);margin-bottom:14px}
+.position-tag b{color:var(--warn)}
+
+/* roadmap tree */
+.tree{font-size:14px}
+.tree .node{margin:0 0 10px;padding:10px 12px;background:var(--brand-soft);border-radius:var(--radius-sm);
+  color:var(--ink);font-weight:600}
+.tree .children{padding-left:16px;margin:-4px 0 12px;border-left:2px solid var(--line)}
+.tree .child{display:flex;align-items:center;gap:8px;padding:5px 0;color:var(--ink2);font-size:13.5px}
+.tree .child::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--brand);flex:none}
+
+/* Quiz */
+.quiz-q{font-size:16px;font-weight:600;margin-bottom:14px;line-height:1.55}
+.opt{display:flex;gap:10px;align-items:flex-start;padding:12px 13px;border:1.5px solid var(--line);border-radius:var(--radius-sm);
+  margin-bottom:10px;cursor:pointer;background:var(--card);font-size:14.5px;transition:.12s}
+.opt .olabel{flex:none;width:26px;height:26px;border-radius:50%;border:1.5px solid var(--ink3);color:var(--ink2);
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.opt.sel{border-color:var(--brand);background:var(--brand-soft)}
+.opt.sel .olabel{background:var(--brand);border-color:var(--brand);color:#fff}
+.opt.right{border-color:var(--good);background:var(--good-soft)}
+.opt.right .olabel{background:var(--good);border-color:var(--good);color:#fff}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.opt.wrong .olabel{background:var(--bad);border-color:var(--bad);color:#fff}
+.explain{margin-top:4px;padding:12px 14px;background:var(--brand-soft);border-radius:var(--radius-sm);font-size:13.5px}
+.explain b{color:var(--brand)}
+.quiz-score{font-size:15px;font-weight:700;text-align:center;padding:8px}
+
+/* Search */
+.search-box{position:sticky;top:calc(56px + env(safe-area-inset-top));z-index:10;background:var(--bg);padding:10px 14px}
+.search-input{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:var(--radius-sm);
+  background:var(--card);color:var(--ink);font-size:15px;outline:none}
+.search-input:focus{border-color:var(--brand)}
+.result-hit{margin-bottom:8px}
+.result-hit mark{background:#fef08a;color:inherit;border-radius:3px;padding:0 2px}
+
+/* Bottom nav */
+.bottomnav{position:fixed;bottom:0;left:0;right:0;z-index:20;display:flex;background:var(--card);
+  border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+.bottomnav .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0;
+  cursor:pointer;color:var(--ink3);font-size:11px;border:none;background:none}
+.bottomnav .nav-item .ico{font-size:20px}
+.bottomnav .nav-item.active{color:var(--brand)}
+
+/* settings rows */
+.set-row{display:flex;align-items:center;justify-content:space-between;padding:14px 2px;border-bottom:1px solid var(--line)}
+.set-row:last-child{border-bottom:none}
+.set-row .slabel{font-size:15px}
+.set-row .sval{color:var(--ink3);font-size:13px}
+.switch{width:50px;height:30px;border-radius:999px;background:var(--line);position:relative;cursor:pointer;transition:.2s}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;
+  transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.switch.on{background:var(--brand)}
+.switch.on::after{left:23px}
+.seg{display:flex;background:var(--line);border-radius:10px;padding:3px;gap:3px}
+.seg button{flex:1;border:none;background:none;padding:7px 0;border-radius:8px;font-size:13px;cursor:pointer;color:var(--ink2)}
+.seg button.on{background:var(--card);color:var(--brand);font-weight:600;box-shadow:var(--shadow)}
+
+.empty{padding:40px 16px;text-align:center;color:var(--ink3);font-size:14px}
+.empty .big{font-size:40px;display:block;margin-bottom:10px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="topbar">
+    <button class="back" id="backBtn" style="visibility:hidden">‹</button>
+    <div class="title" id="topTitle">集成备考助手</div>
+    <button class="icon-btn" id="searchBtn">🔍</button>
+    <button class="icon-btn" id="themeBtn">🌙</button>
+  </div>
+
+  <div id="view-home" class="view active"></div>
+  <div id="view-chapter" class="view"></div>
+  <div id="view-section" class="view"></div>
+  <div id="view-quiz" class="view"></div>
+  <div id="view-search" class="view"></div>
+  <div id="view-settings" class="view"></div>
+
+  <div class="bottomnav">
+    <button class="nav-item active" data-nav="home"><span class="ico">🏠</span>首页</button>
+    <button class="nav-item" data-nav="chapter"><span class="ico">📚</span>学习</button>
+    <button class="nav-item" data-nav="quiz"><span class="ico">📝</span>自测</button>
+    <button class="nav-item" data-nav="settings"><span class="ico">⚙️</span>我的</button>
+  </div>
+</div>
+
+<script src="content.js"></script>
+<script>
+(function(){
+"use strict";
+var D = window.COURSE_DATA;
+var store = {
+  get:function(k,d){ try{var v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;} },
+  set:function(k,v){ try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} }
+};
+var state = {
+  done:{},        // sectionId -> true (已完成学习)
+  quiz:{},        // chapterId -> {right, total, answered, wrong:[]}
+  wrong:[],       // [{q, opts, a, explain, ch, sec}]
+  theme:"light",
+  font:1,
+  lastChapter:"ch4",
+  last:{view:"home", id:""}
+};
+Object.assign(state, store.get("ds_state", state));
+
+function saveState(){ store.set("ds_state", {done:state.done, quiz:state.quiz, wrong:state.wrong, theme:state.theme, font:state.font, lastChapter:state.lastChapter, last:state.last}); }
+
+/* ---------- helpers ---------- */
+function el(id){ return document.getElementById(id); }
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function allChapters(){ var a=[]; D.modules.forEach(function(m){ m.chapters.forEach(function(c){ a.push(c); }); }); return a; }
+function findChapter(id){ for(var i=0;i<D.modules.length;i++){var cs=D.modules[i].chapters;for(var j=0;j<cs.length;j++){if(cs[j].id===id)return cs[j];}} return null; }
+function findSection(sid){ var ch=allChapters(); for(var i=0;i<ch.length;i++){var s=ch[i].sections;for(var j=0;j<s.length;j++){if(s[j].id===sid)return {ch:ch[i],sec:s[j]};}} return null; }
+function chDoneCount(c){ return c.sections.filter(function(s){return state.done[s.id];}).length; }
+function chQuiz(c){ var q=state.quiz[c.id]; if(!q)return null; return q.right+" / "+q.total; }
+
+function totalStats(){ var s=0,d=0; allChapters().forEach(function(c){ s+=c.sections.length; d+=chDoneCount(c); }); return {s:s,d:d}; }
+
+/* ---------- markdown renderer ---------- */
+function md(src){
+  if(!src) return "";
+  var lines = src.split("\n");
+  var html = "", inUl=false, inOl=false, inTable=false, tableRows=[], inBq=false;
+  function closeLists(){ if(inUl){html+="</ul>";inUl=false;} if(inOl){html+="</ol>";inOl=false;} }
+  function inline(t){
+    return esc(t)
+      .replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>")
+      .replace(/\*([^*]+)\*/g,"<em>$1</em>")
+      .replace(/`([^`]+)`/g,"<code>$1</code>");
+  }
+  function flushTable(){ if(!inTable)return; inTable=false;
+    if(!tableRows.length){tableRows=[];return;}
+    var head = tableRows[0], body = tableRows.slice(1);
+    var th = head.map(function(c){return "<th>"+inline(c)+"</th>";}).join("");
+    var rows = body.map(function(r){return "<tr>"+r.map(function(c){return "<td>"+inline(c)+"</td>";}).join("")+"</tr>";}).join("");
+    html += "<table><thead><tr>"+th+"</tr></thead><tbody>"+rows+"</tbody></table>";
+    tableRows=[];
+  }
+  function closeBq(){ if(inBq){html+="</blockquote>";inBq=false;} }
+  for(var i=0;i<lines.length;i++){
+    var line=lines[i], t=line.trim();
+    // table
+    if(/^\|.*\|$/.test(t)){
+      closeLists(); closeBq();
+      if(!inTable){inTable=true;tableRows=[];}
+      var cells=t.replace(/^\|/,"").replace(/\|$/,"").split("|").map(function(c){return c.trim();});
+      if(!/^[\s:\-|]+$/.test(t.replace(/\|/g,""))) tableRows.push(cells);
+      continue;
+    } else { flushTable(); }
+    // headings
+    if(/^#### /.test(t)){ closeLists(); closeBq(); html+="<h4>"+inline(t.slice(5))+"</h4>"; continue; }
+    if(/^### /.test(t)){ closeLists(); closeBq(); html+="<h3>"+inline(t.slice(4))+"</h3>"; continue; }
+    if(/^## /.test(t)){ closeLists(); closeBq(); html+="<h2>"+inline(t.slice(3))+"</h2>"; continue; }
+    if(/^# /.test(t)){ closeLists(); closeBq(); html+="<h1>"+inline(t.slice(2))+"</h1>"; continue; }
+    // hr
+    if(/^---+$/.test(t)){ closeLists(); closeBq(); html+="<hr>"; continue; }
+    // blockquote
+    if(/^>/.test(t)){ closeLists(); if(!inBq){html+="<blockquote>";inBq=true;} html+=inline(t.replace(/^>\s?/,""))+"<br>"; continue; }
+    // ul
+    if(/^[-*] /.test(t)){ closeBq(); if(!inUl){html+="<ul>";inUl=true;} html+="<li>"+inline(t.slice(2))+"</li>"; continue; }
+    // ol
+    if(/^\d+\. /.test(t)){ closeBq(); if(!inOl){html+="<ol>";inOl=true;} html+="<li>"+inline(t.replace(/^\d+\.\s/,""))+"</li>"; continue; }
+    // blank
+    if(t===""){ closeLists(); closeBq(); continue; }
+    // paragraph
+    closeLists(); closeBq(); html+="<p>"+inline(t)+"</p>";
+  }
+  flushTable(); closeLists(); closeBq();
+  return html;
+}
+
+/* ---------- routing ---------- */
+function route(){
+  var h = location.hash || "#/";
+  var parts = h.replace(/^#\/?/,"").split("/");
+  var view = parts[0] || "home";
+  state.last = {view:view, id:h};
+  saveState();
+  if(view==="home") return renderHome();
+  if(view==="ch" && parts[1]) return renderChapter(parts[1]);
+  if(view==="sec" && parts[1] && parts[2]) return renderSection(parts[1], parts[2]);
+  if(view==="quiz" && parts[1]) return renderQuiz(parts[1]);
+  if(view==="search") return renderSearch();
+  if(view==="settings") return renderSettings();
+  renderHome();
+}
+function go(h){ location.hash = h; }
+function show(viewId){
+  document.querySelectorAll(".view").forEach(function(v){v.classList.remove("active");});
+  el("view-"+viewId).classList.add("active");
+  document.querySelectorAll(".nav-item").forEach(function(n){n.classList.remove("active");});
+  var map={home:"home",chapter:"chapter",quiz:"quiz",search:"search",settings:"settings",section:"chapter"};
+  var nv = map[viewId] || "home";
+  var target = document.querySelector('.nav-item[data-nav="'+nv+'"]');
+  if(target) target.classList.add("active");
+  window.scrollTo(0,0);
+  el("backBtn").style.visibility = (viewId==="home") ? "hidden" : "visible";
+}
+
+/* ---------- views ---------- */
+function renderHome(){
+  show("home");
+  var st = totalStats();
+  var pct = st.s ? Math.round(st.d/st.s*100) : 0;
+  var html = "";
+  html += '<div class="card" style="background:linear-gradient(135deg,#1f6feb,#0ea5a5);color:#fff;border:none">'
+    + '<div class="h1" style="color:#fff">'+esc(D.title)+'</div>'
+    + '<div class="sub" style="color:rgba(255,255,255,.85)">'+esc(D.subtitle)+' · '+esc(D.edition)+'</div>'
+    + '<div style="display:flex;align-items:center;gap:12px;margin-top:10px">'
+    + '<div class="progress-wrap" style="flex:1;background:rgba(255,255,255,.3)"><div class="progress-fill" style="background:#fff;width:'+pct+'%"></div></div>'
+    + '<div style="font-size:13px;font-weight:700">'+st.d+'/'+st.s+' 节</div></div></div>';
+
+  html += '<div class="card"><div class="h2">🧭 学习方法</div>'
+    + '<div class="module-logic">'+esc(D.note)+'</div></div>';
+
+  D.modules.forEach(function(m){
+    var done=0,tot=0; m.chapters.forEach(function(c){tot+=c.sections.length;done+=chDoneCount(c);});
+    var mpct = tot?Math.round(done/tot*100):0;
+    html += '<div class="card"><div class="module-head"><span class="mtitle">'+esc(m.title)+'</span><span class="mrange">'+esc(m.range)+'</span></div>'
+      + '<div class="module-weight">'+esc(m.weight)+'</div>'
+      + '<div class="progress-wrap" style="margin:8px 0"><div class="progress-fill" style="width:'+mpct+'%"></div></div>'
+      + '<div class="module-logic">'+esc(m.logic)+'</div>';
+    m.chapters.forEach(function(c){
+      var cd = chDoneCount(c);
+      var pill = c.status==="done" ? '<span class="pill done">已整理</span>' : c.status==="partial" ? '<span class="pill partial">整理中</span>' : '<span class="pill todo">待整理</span>';
+      var sub = c.sections.length ? cd+'/'+c.sections.length+' 节'+(state.quiz[c.id]?' · 自测 '+chQuiz(c):'') : '内容待填充';
+      html += '<div class="chapter-row" onclick="go(\'#/ch/'+c.id+'\')">'
+        + '<div class="num">'+c.num+'</div>'
+        + '<div class="cinfo"><div class="ctitle">'+esc(c.title)+'</div><div class="csub">'+sub+'</div></div>'
+        + pill + '<span class="arrow">›</span></div>';
+    });
+    html += '</div>';
+  });
+  el("view-home").innerHTML = html;
+  el("topTitle").textContent = "集成备考助手";
+}
+
+function renderChapter(id){
+  show("chapter");
+  var c = findChapter(id);
+  if(!c){ renderHome(); return; }
+  state.lastChapter = id; saveState();
+  var cd = chDoneCount(c);
+  var html = '<div class="card">'
+    + '<div style="display:flex;align-items:center;gap:10px"><div class="num" style="width:44px;height:44px;border-radius:12px;background:var(--brand-soft);color:var(--brand);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:17px">'+c.num+'</div>'
+    + '<div><div class="h1" style="margin:0">'+esc(c.title)+'</div><div class="muted">已学 '+cd+'/'+c.sections.length+' 节</div></div></div>'
+    + '<div class="progress-wrap" style="margin-top:12px"><div class="progress-fill" style="width:'+(c.sections.length?Math.round(cd/c.sections.length*100):0)+'%"></div></div></div>';
+
+  if(c.authorLogic){
+    html += '<div class="card"><div class="h2">🧠 作者的写作思路（= 出题逻辑）</div><div class="md">'+md(c.authorLogic)+'</div></div>';
+  }
+  if(c.map && c.map.length){
+    html += '<div class="card"><div class="h2">🗺️ 本章逻辑架构图</div><div class="tree">';
+    c.map.forEach(function(n){ 
+      html += '<div class="node">'+esc(n.t)+'</div>';
+      if(n.c && n.c.length){ html += '<div class="children">'+n.c.map(function(x){return '<div class="child">'+esc(x)+'</div>';}).join("")+'</div>'; }
+    });
+    html += '</div></div>';
+  }
+  if(c.sections.length){
+    html += '<div class="card"><div class="h2">📖 各节内容</div>';
+    c.sections.forEach(function(s){
+      html += '<div class="sec-row" onclick="go(\'#/sec/'+c.id+'/'+s.id+'\')">'
+        + '<span class="snum">'+esc(s.num)+'</span><span class="stitle">'+esc(s.title)+'</span>'
+        + (state.done[s.id] ? '<span class="tick">✅</span>' : '') + '</div>';
+    });
+    html += '</div>';
+  } else {
+    html += '<div class="empty"><span class="big">📝</span>本章内容待整理<br>（分章节任务逐个完成中）</div>';
+  }
+  if(c.quiz && c.quiz.length){
+    html += '<button class="btn" onclick="go(\'#/quiz/'+c.id+'\')">📝 本章自测（'+c.quiz.length+' 题）'+(state.quiz[c.id]?' · '+chQuiz(c):'')+'</button>';
+  }
+  el("view-chapter").innerHTML = html;
+  el("topTitle").textContent = "第"+c.num+"章 "+c.title;
+}
+
+function renderSection(chId, secId){
+  show("section");
+  var r = findSection(secId);
+  if(!r){ renderHome(); return; }
+  var c=r.ch, s=r.sec;
+  var idx = c.sections.findIndex(function(x){return x.id===secId;});
+  var prev = c.sections[idx-1], next = c.sections[idx+1];
+  var html = '<div class="card">'
+    + '<div class="h1" style="font-size:18px">'+esc(s.num)+' '+esc(s.title)+'</div>'
+    + '<div class="muted" style="margin-top:2px">第'+c.num+'章 '+esc(c.title)+'</div></div>';
+  if(s.position){
+    html += '<div class="position-tag"><b>📍 定位</b>：'+md(s.position)+'</div>';
+  }
+  html += '<div class="card"><div class="md">'+md(s.body)+'</div></div>';
+  html += '<div style="display:flex;gap:10px">';
+  if(prev) html += '<button class="btn ghost" style="flex:1" onclick="go(\'#/sec/'+c.id+'/'+prev.id+'\')">‹ '+esc(prev.num)+'</button>';
+  if(next) html += '<button class="btn ghost" style="flex:1" onclick="go(\'#/sec/'+c.id+'/'+next.id+'\')">'+esc(next.num)+' ›</button>';
+  html += '</div>';
+  html += '<button class="btn '+(state.done[secId]?'warn':'')+'" id="markDone">'+(state.done[secId]?'✅ 已掌握（点击取消）':'✔ 标记为已掌握')+'</button>';
+  el("view-section").innerHTML = html;
+  el("topTitle").textContent = s.num+" "+s.title;
+  el("markDone").onclick = function(){
+    if(state.done[secId]) delete state.done[secId]; else state.done[secId]=true;
+    saveState(); renderSection(chId, secId);
+  };
+}
+
+/* ---------- quiz ---------- */
+var quiz = { ch:null, list:[], idx:0, answers:[], done:false };
+function renderQuiz(id){
+  show("quiz");
+  var c = findChapter(id);
+  if(!c || !c.quiz || !c.quiz.length){ renderHome(); return; }
+  quiz = { ch:c, list:c.quiz.slice(), idx:0, answers:new Array(c.quiz.length).fill(-1), done:false };
+  // shuffle options deterministically? keep simple: no shuffle, but shuffle question order
+  quiz.list.sort(function(){return Math.random()-0.5;});
+  el("topTitle").textContent = "自测 · 第"+c.num+"章";
+  drawQuiz();
+}
+function drawQuiz(){
+  var q = quiz.list[quiz.idx];
+  var picked = quiz.answers[quiz.idx];
+  var html = '<div class="card">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
+    + '<span class="pill gray">第 '+(quiz.idx+1)+' / '+quiz.list.length+' 题</span>'
+    + '<span class="pill gray">第'+quiz.ch.num+'章</span></div>'
+    + '<div class="quiz-q">'+esc(q.q)+'</div>'
+    + q.opts.map(function(o,i){
+        var cls = "opt";
+        if(picked>=0){ if(i===q.a) cls+=" right"; else if(i===picked) cls+=" wrong"; }
+        else if(i===picked) cls+=" sel";
+        return '<div class="'+cls+'" onclick="pickOpt('+i+')"><span class="olabel">'+String.fromCharCode(65+i)+'</span><span>'+esc(o)+'</span></div>';
+      }).join("")
+    + (picked>=0 ? '<div class="explain">'+(picked===q.a?'✅ 回答正确！':'❌ 回答错误。')+'<br><b>解析：</b>'+esc(q.explain)+'</div>' : '')
+    + '</div>';
+  html += '<div style="display:flex;gap:10px">'
+    + (quiz.idx>0 ? '<button class="btn ghost" style="flex:1" onclick="navQuiz(-1)">上一题</button>' : '')
+    + (quiz.idx<quiz.list.length-1 ? '<button class="btn" style="flex:1" onclick="navQuiz(1)">下一题</button>' : '')
+    + '</div>';
+  if(quiz.idx===quiz.list.length-1){
+    html += '<button class="btn" onclick="finishQuiz()">📊 交卷看结果</button>';
+  }
+  el("view-quiz").innerHTML = html;
+}
+function pickOpt(i){
+  if(quiz.answers[quiz.idx]>=0) return;
+  quiz.answers[quiz.idx]=i;
+  var q = quiz.list[quiz.idx];
+  if(i!==q.a){ state.wrong.push({q:q.q,opts:q.opts,a:q.a,explain:q.explain,ch:quiz.ch.id,chName:quiz.ch.title}); }
+  drawQuiz();
+}
+function navQuiz(d){ quiz.idx += d; drawQuiz(); }
+function finishQuiz(){
+  var right=0; quiz.list.forEach(function(q,i){ if(quiz.answers[i]===q.a) right++; });
+  var old = state.quiz[quiz.ch.id] || {right:0,total:0};
+  state.quiz[quiz.ch.id] = { right:(old.right||0)+right, total:(old.total||0)+quiz.list.length };
+  // dedupe wrong
+  saveState();
+  var html = '<div class="card" style="text-align:center">'
+    + '<div style="font-size:48px">'+(right/quiz.list.length>=0.6?'🎉':'💪')+'</div>'
+    + '<div class="quiz-score">答对 '+right+' / '+quiz.list.length+' 题（'+(Math.round(right/quiz.list.length*100))+' 分）</div>'
+    + '<div class="muted">'+(right===quiz.list.length?'全部正确，太棒了！':right>=quiz.list.length*0.6?'不错，继续巩固！':'别灰心，错题会在「错题本」里复习。')+'</div></div>';
+  var wrong = quiz.list.map(function(q,i){return {q:q,i:i};}).filter(function(x){return quiz.answers[x.i]!==x.q.a;});
+  if(wrong.length){
+    html += '<div class="card"><div class="h2">❌ 错题回顾</div>';
+    wrong.forEach(function(w){
+      html += '<div class="quiz-q" style="font-size:14.5px">'+esc(w.q.q)+'</div>'
+        + '<div class="explain"><b>正确答案：</b>'+String.fromCharCode(65+w.q.a)+' · '+esc(w.q.opts[w.q.a])+'<br><b>解析：</b>'+esc(w.q.explain)+'</div>';
+    });
+    html += '</div>';
+  }
+  html += '<button class="btn" onclick="go(\'#/ch/'+quiz.ch.id+'\')">返回章节</button>'
+    + '<button class="btn ghost" onclick="renderQuiz(\''+quiz.ch.id+'\')">再做一遍</button>';
+  el("view-quiz").innerHTML = html;
+}
+
+/* ---------- search ---------- */
+function renderSearch(){
+  show("search");
+  el("topTitle").textContent = "搜索";
+  el("view-search").innerHTML = '<div class="search-box"><input class="search-input" id="searchInput" placeholder="搜索知识点 / 口诀 / 考点…" autocomplete="off"></div><div id="searchResults"></div>';
+  el("searchInput").focus();
+  el("searchInput").oninput = function(){
+    var kw = this.value.trim().toLowerCase();
+    var out = el("searchResults");
+    if(kw.length<1){ out.innerHTML='<div class="empty"><span class="big">🔍</span>输入关键词搜索全书内容</div>'; return; }
+    var hits = [];
+    allChapters().forEach(function(c){
+      c.sections.forEach(function(s){
+        var text = (s.num+" "+s.title+" "+(s.position||"")+" "+(s.body||"")).toLowerCase();
+        if(text.indexOf(kw)>=0){
+          var snippet = "";
+          var idx = text.indexOf(kw);
+          snippet = text.substring(Math.max(0,idx-30), Math.min(text.length, idx+kw.length+60));
+          hits.push({c:c, s:s, snippet:snippet, kw:kw});
+        }
+      });
+      if((c.title+" "+c.authorLogic).toLowerCase().indexOf(kw)>=0){
+        hits.push({c:c, s:null, snippet:(c.authorLogic||"").substring(0,80), kw:kw});
+      }
+    });
+    if(!hits.length){ out.innerHTML='<div class="empty"><span class="big">😕</span>未找到相关内容</div>'; return; }
+    out.innerHTML = hits.slice(0,50).map(function(h){
+      var hl = esc(h.snippet).replace(new RegExp(esc(h.kw),"gi"), function(m){return "<mark>"+m+"</mark>";});
+      return '<div class="card result-hit" onclick="go(\'#'+(h.s?'/sec/'+h.c.id+'/'+h.s.id:'/ch/'+h.c.id)+'\')">'
+        + '<div style="font-weight:600;margin-bottom:4px">第'+h.c.num+'章 '+esc(h.c.title)+(h.s?' · '+esc(h.s.num)+' '+esc(h.s.title):'')+'</div>'
+        + '<div class="muted">'+hl+'…</div></div>';
+    }).join("");
+  };
+}
+
+/* ---------- settings ---------- */
+function renderSettings(){
+  show("settings");
+  var st = totalStats();
+  var wrongN = state.wrong.length;
+  var html = '<div class="card"><div class="h2">📊 学习统计</div>'
+    + '<div class="set-row"><span class="slabel">已完成小节</span><span class="sval">'+st.d+' / '+st.s+'</span></div>'
+    + '<div class="set-row"><span class="slabel">错题数量</span><span class="sval">'+wrongN+' 题</span></div></div>';
+
+  html += '<div class="card"><div class="h2">🎨 外观</div>'
+    + '<div class="set-row"><span class="slabel">深色模式</span><div class="switch '+(state.theme==="dark"?"on":"")+'" id="swTheme"></div></div>'
+    + '<div class="set-row"><span class="slabel">正文字号</span>'
+    + '<div class="seg" style="width:150px">'
+    + ['小','中','大'].map(function(t,i){return '<button class="'+(state.font===i?"on":"")+'" onclick="setFont('+i+')">'+t+'</button>';}).join("")
+    + '</div></div></div>';
+
+  html += '<div class="card"><div class="h2">📕 错题本</div>'
+    + (wrongN? '<button class="btn warn" onclick="showWrong()">查看错题（'+wrongN+'）</button>' : '<div class="muted">暂无错题，继续保持 💪</div>')
+    + '</div>';
+
+  html += '<div class="card"><div class="h2">⚙️ 其他</div>'
+    + '<button class="btn warn" onclick="clearData()">清除学习进度与错题</button></div>';
+
+  el("view-settings").innerHTML = html;
+  el("topTitle").textContent = "我的";
+  el("swTheme").onclick = function(){
+    state.theme = state.theme==="dark"?"light":"dark";
+    applyTheme(); saveState(); renderSettings();
+  };
+}
+function setFont(i){ state.font=i; saveState(); applyFont(); renderSettings(); }
+function showWrong(){
+  var html = '<div class="card"><div class="h2">📕 错题本（'+state.wrong.length+'）</div></div>';
+  state.wrong.slice().reverse().forEach(function(w,i){
+    html += '<div class="card"><div class="quiz-q" style="font-size:14.5px">'+esc(w.q)+'</div>'
+      + '<div class="explain"><b>正确答案：</b>'+String.fromCharCode(65+w.a)+' · '+esc(w.opts[w.a])+'<br><b>解析：</b>'+esc(w.explain)+'</div>'
+      + '<div class="muted" style="margin-top:6px">来自第'+esc(w.chName)+'</div></div>';
+  });
+  html += '<button class="btn ghost" onclick="renderSettings()">返回</button>';
+  el("view-settings").innerHTML = html;
+  el("topTitle").textContent = "错题本";
+}
+function clearData(){
+  if(confirm("确定清除所有学习进度和错题记录吗？此操作不可恢复。")){
+    state.done={}; state.quiz={}; state.wrong=[]; saveState(); renderSettings();
+  }
+}
+
+/* ---------- theme & font ---------- */
+function applyTheme(){ document.documentElement.setAttribute("data-theme", state.theme==="dark"?"dark":"light"); el("themeBtn").textContent = state.theme==="dark"?"☀️":"🌙"; }
+function applyFont(){ var sizes=[15,16,18]; document.documentElement.style.fontSize = sizes[state.font]+"px"; }
+
+/* ---------- events ---------- */
+el("backBtn").onclick = function(){
+  var v = (location.hash||"#/").replace(/^#\/?/,"").split("/")[0];
+  if(v==="sec" || v==="ch" || v==="quiz" || v==="search"){ history.back(); }
+  else go("#/");
+};
+el("searchBtn").onclick = function(){ go("#/search"); };
+el("themeBtn").onclick = function(){ state.theme = state.theme==="dark"?"light":"dark"; applyTheme(); saveState(); };
+document.querySelectorAll(".nav-item").forEach(function(n){
+  n.onclick = function(){
+    var nav = n.getAttribute("data-nav");
+    var ch = findChapter(state.lastChapter) || allChapters()[3];
+    if(nav==="home") go("#/");
+    else if(nav==="chapter"){ go("#/ch/"+ch.id); }
+    else if(nav==="quiz"){ if(ch.quiz && ch.quiz.length) go("#/quiz/"+ch.id); else go("#/quiz/"+allChapters()[3].id); }
+    else if(nav==="settings") go("#/settings");
+  };
+});
+window.addEventListener("hashchange", route);
+
+/* expose to inline onclick */
+window.go = go; window.pickOpt = pickOpt; window.navQuiz = navQuiz; window.finishQuiz = finishQuiz; window.setFont = setFont;
+
+/* ---------- init ---------- */
+applyTheme(); applyFont();
+route();
+/* 离线能力：仅 https 或 localhost 下可注册（本地 file:// 直接打开也能用，只是无法预缓存） */
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+  navigator.serviceWorker.register("sw.js").catch(function(){});
+}
+})();
+</script>
+</body>
+</html>
