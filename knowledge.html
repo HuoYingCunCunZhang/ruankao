@@ -92,6 +92,20 @@ body{
 .panel .logic strong{color:var(--ink)}
 .panel .chip{display:inline-block;background:#f1f5fb;border:1px solid var(--line);color:var(--ink2);
   border-radius:8px;padding:3px 8px;font-size:12px;margin:0 5px 6px 0}
+.panel .chip.on{background:#fde68a;border-color:#f0c040;color:#7a4f00;font-weight:600}
+.panel .chip[data-sub]{cursor:pointer}
+.panel .chip[data-sub]:hover{border-color:var(--brand);color:var(--brand)}
+.panel .postag{background:#fdf3e3;border-left:3px solid #d97706;border-radius:0 10px 10px 0;
+  padding:10px 12px;font-size:13px;margin-bottom:14px;line-height:1.65}
+.panel .postag b{color:#b45309}
+.panel mark.hit{background:#fde68a;color:inherit;border-radius:3px;padding:0 2px;font-weight:700}
+.panel .logic table{width:100%;border-collapse:collapse;margin:10px 0;font-size:12.5px;display:block;overflow-x:auto}
+.panel .logic th,.panel .logic td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+.panel .logic th{background:#f1f5fb;font-weight:700;white-space:nowrap}
+.panel .logic tr:nth-child(even) td{background:#fafbfd}
+.panel .logic blockquote{margin:8px 0;padding:8px 12px;background:#f1f5fb;border-left:3px solid var(--line);border-radius:0 8px 8px 0}
+.panel .logic hr{border:none;border-top:1px dashed var(--line);margin:12px 0}
+.panel .logic code{background:#f1f5fb;padding:1px 5px;border-radius:4px;font-size:.92em}
 .panel .mapline{display:flex;gap:8px;align-items:flex-start;padding:7px 0;border-bottom:1px dashed var(--line)}
 .panel .mapline:last-child{border-bottom:none}
 .panel .mapline .mt{flex:none;font-size:12.5px;font-weight:700;color:var(--brand);width:44%}
@@ -108,8 +122,8 @@ body{
   .panel{top:calc(48px + env(safe-area-inset-top));right:12px;bottom:12px;width:400px;border-radius:14px}
   body.panelopen .ctrls{right:426px}
 }
-@media (max-width:700px){
-  .panel{left:0;right:0;bottom:0;max-height:66vh;border-radius:16px 16px 0 0}
+  @media (max-width:700px){
+  .panel{left:0;right:0;bottom:0;max-height:58vh;border-radius:16px 16px 0 0}
   body.panelopen .ctrls{display:none}
   .topbar .title{font-size:14px}
 }
@@ -168,6 +182,76 @@ var nodes = [], byId = {}, edges = [];
 function N(o){ nodes.push(o); byId[o.id]=o; return o; }
 function E(a,b){ edges.push({a:a, b:b}); }
 
+// 把「知识点(map item)」映射到对应的「小节(section)」，供右侧面板展示
+function sectionForMapItem(c, mi){
+  var secs = c.sections || [];
+  var m = /[(（]\s*(\d+(?:\.\d+)*)/.exec(mi.t || "");   // 支持 "13.1-13.3" 取首个 13.1
+  var num = m ? m[1] : null;
+  if(num){
+    for(var i=0;i<secs.length;i++){ if(String(secs[i].num) === num) return secs[i]; }
+    for(var j=0;j<secs.length;j++){
+      var sn = String(secs[j].num||"");
+      if(sn && (sn.indexOf(num) === 0 || num.indexOf(sn) === 0)) return secs[j];
+    }
+  }
+  var t = String(mi.t || "").replace(/[（(].*?[)）]/g, "").trim();
+  if(t){
+    for(var k=0;k<secs.length;k++){
+      var st = String(secs[k].title || "");
+      if(st && (st.indexOf(t) >= 0 || t.indexOf(st) >= 0)) return secs[k];
+    }
+  }
+  return null;
+}
+// 中文二元组，用于按正文命中率定位小节
+function bigrams(s){
+  var out = [], t = String(s||"");
+  for(var i=0;i<t.length-1;i++){
+    var a = t.charCodeAt(i), b = t.charCodeAt(i+1);
+    if(a>=0x4e00 && a<=0x9fa5 && b>=0x4e00 && b<=0x9fa5) out.push(t.substr(i,2));
+  }
+  return out;
+}
+// 第五级考点：先按考点名匹配小节标题，再按「标题权重+正文命中」挑最相关的小节
+function sectionForSub(c, label, fallback){
+  var secs = c.sections || [];
+  var t = String(label || "").replace(/[（(].*?[)）]/g, "").trim();
+  for(var i=0;i<secs.length;i++){
+    var st0 = String(secs[i].title || "");
+    if(st0 && t.length>=2 && (st0.indexOf(t) >= 0 || t.indexOf(st0) >= 0)) return secs[i];
+  }
+  var grams = bigrams(label), uniq = {}, keys = [];
+  grams.forEach(function(g){ if(!uniq[g]){ uniq[g]=1; keys.push(g); } });
+  if(!keys.length || !secs.length) return fallback || null;
+
+  var rows = [];
+  for(var j=0;j<secs.length;j++){
+    var st = String(secs[j].title||""), bd = String(secs[j].body||"");
+    var titleHit = 0, bodyHit = 0;
+    keys.forEach(function(g){
+      if(st.indexOf(g) >= 0) titleHit++;
+      else if(bd.indexOf(g) >= 0) bodyHit++;
+    });
+    rows.push({sec:secs[j], score: titleHit*3 + bodyHit});
+  }
+  var best = 0;
+  rows.forEach(function(r){ if(r.score > best) best = r.score; });
+  if(best <= 0) return fallback || null;
+
+  var cands = rows.filter(function(r){ return r.score === best; }).map(function(r){ return r.sec; });
+  if(fallback && cands.indexOf(fallback) >= 0) return fallback;   // 同分优先父级小节
+  if(fallback && fallback.num){                                   // 否则优先编号前缀最接近的
+    var fp = String(fallback.num), pick = cands[0], pickLen = -1;
+    cands.forEach(function(s){
+      var sn = String(s.num||""), len = 0;
+      while(len < sn.length && len < fp.length && sn.charAt(len) === fp.charAt(len)) len++;
+      if(len > pickLen){ pickLen = len; pick = s; }
+    });
+    return pick;
+  }
+  return cands[0];
+}
+
 var root = N({id:"root", type:"root", label:D.title||"系统集成项目管理工程师", sub:"第3版教材 · 全18章"});
 var chapters = [];
 var modules = (D.modules||[]).map(function(m){
@@ -180,12 +264,14 @@ var modules = (D.modules||[]).map(function(m){
     E(m.id, c.id);
     (c.map||[]).forEach(function(mi, miIdx){
       var mapId = c.id+"-m"+miIdx;
-      var mnode = N({id:mapId, type:"mapitem", label:mi.t, module:m.id, chapter:c.id, subIds:[]});
+      var sec = sectionForMapItem(c, mi);
+      var mnode = N({id:mapId, type:"mapitem", label:mi.t, module:m.id, chapter:c.id, subIds:[], sec:sec});
       cn.mapItems.push(mnode);
       E(c.id, mapId);
       (mi.c||[]).forEach(function(sc, sci){
         var sid = mapId+"-s"+sci;
-        N({id:sid, type:"sub", label:sc, module:m.id, chapter:c.id, map:mapId});
+        N({id:sid, type:"sub", label:sc, module:m.id, chapter:c.id, map:mapId,
+           sec: sectionForSub(c, sc, sec)});
         mnode.subIds.push(sid);
         E(mapId, sid);
       });
@@ -324,15 +410,16 @@ function visibleNodes(){
   return [ch].concat(ch.mapItems).concat(subs);
 }
 function visibleEdges(){
+  var vis = {};
+  visibleNodes().forEach(function(n){ vis[n.id] = true; });
   if(state.mode==="overview"){
-    return edges.filter(function(e){
-      var a = byId[e.a];
-      return a && (a.type==="root" || a.type==="module");
-    });
+    // 端点都可见才画线：收起某个部分时，它的章节连线一起消失
+    return edges.filter(function(e){ return vis[e.a] && vis[e.b]; });
   }
   var f = state.focusId;
   return edges.filter(function(e){
-    var a = byId[e.a]; if(!a) return false;
+    var a = byId[e.a], b = byId[e.b];
+    if(!a || !b || !vis[e.a] || !vis[e.b]) return false;
     return a.id===f || a.chapter===f;
   });
 }
@@ -356,7 +443,7 @@ function uiInsets(){
   var W=cv.clientWidth, H=cv.clientHeight;
   var ins = {l:30, r:30, t:112, b:80};
   if(panelOpen()){
-    if(W<701){ ins.b = Math.round(H*0.60); }
+    if(W<701){ ins.b = Math.round(H*0.58); }
     else { ins.r = 424; }
   }
   return ins;
@@ -401,7 +488,7 @@ function setMode(mode, id){
     layoutFocus(id);
     state.mode = "focus"; state.focusId = id; state.highlight = null;
     document.getElementById("backBtn").style.display = "flex";
-    renderPanel(id, !isNarrow());      // 手机端不自动弹出，避免遮挡
+    renderNodePanel(id, !isNarrow());      // 手机端不自动弹出，避免遮挡
     syncDetailBtn();
     fitView();
   } else {
@@ -448,12 +535,13 @@ function drawNode(n){
   var hl = (n.id === state.highlight);
 
   if(hl){
-    ctx.beginPath(); ctx.fillStyle = "rgba(245,158,11,.22)";
-    ctx.arc(x, y, Math.max(w,h)/2 + 8, 0, Math.PI*2); ctx.fill();
+    // 高亮贴着节点本身的圆角矩形，而不是一个大圆
+    roundRect(ctx, x-w/2-6, y-h/2-6, w+12, h+12, 11*state.scale);
+    ctx.fillStyle = "rgba(245,158,11,.22)"; ctx.fill();
   }
   if(focused){
-    ctx.beginPath(); ctx.strokeStyle = "#f59e0b"; ctx.lineWidth = 3;
-    ctx.arc(x, y, Math.max(w,h)/2 + 6, 0, Math.PI*2); ctx.stroke();
+    roundRect(ctx, x-w/2-5, y-h/2-5, w+10, h+10, 11*state.scale);
+    ctx.strokeStyle = "#f59e0b"; ctx.lineWidth = 3; ctx.stroke();
   }
 
   if(n.type==="root"){
@@ -533,75 +621,211 @@ function render(){
 function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
 function md(src){
   if(!src) return "";
-  var lines = src.split("\n"), html="", inUl=false, inOl=false;
+  var lines = src.split("\n");
+  var html = "", inUl=false, inOl=false, inTable=false, tableRows=[], inBq=false;
   function inline(t){
     return esc(t).replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>")
                  .replace(/\*([^*]+)\*/g,"<em>$1</em>")
                  .replace(/`([^`]+)`/g,"<code>$1</code>");
   }
-  function close(){ if(inUl){html+="</ul>";inUl=false;} if(inOl){html+="</ol>";inOl=false;} }
+  function closeLists(){ if(inUl){html+="</ul>";inUl=false;} if(inOl){html+="</ol>";inOl=false;} }
+  function closeBq(){ if(inBq){html+="</blockquote>";inBq=false;} }
+  function flushTable(){
+    if(!inTable) return;
+    inTable = false;
+    if(!tableRows.length){ tableRows=[]; return; }
+    var head = tableRows[0], body = tableRows.slice(1);
+    var th = head.map(function(c){ return "<th>"+inline(c)+"</th>"; }).join("");
+    var rows = body.map(function(r){
+      return "<tr>"+r.map(function(c){ return "<td>"+inline(c)+"</td>"; }).join("")+"</tr>";
+    }).join("");
+    html += "<table><thead><tr>"+th+"</tr></thead><tbody>"+rows+"</tbody></table>";
+    tableRows = [];
+  }
   for(var i=0;i<lines.length;i++){
     var t = lines[i].trim();
-    if(/^#### /.test(t)){ close(); html+="<h4>"+inline(t.slice(5))+"</h4>"; continue; }
-    if(/^### /.test(t)){ close(); html+="<h3>"+inline(t.slice(4))+"</h3>"; continue; }
-    if(/^## /.test(t)){ close(); html+="<h2>"+inline(t.slice(3))+"</h2>"; continue; }
-    if(/^# /.test(t)){ close(); html+="<h1>"+inline(t.slice(2))+"</h1>"; continue; }
-    if(/^[-*] /.test(t)){ if(!inUl){close();html+="<ul>";inUl=true;} html+="<li>"+inline(t.slice(2))+"</li>"; continue; }
-    if(/^\d+\. /.test(t)){ if(!inOl){close();html+="<ol>";inOl=true;} html+="<li>"+inline(t.replace(/^\d+\.\s/,""))+"</li>"; continue; }
-    if(t===""){ close(); continue; }
-    close(); html+="<p>"+inline(t)+"</p>";
+    // 表格
+    if(/^\|.*\|$/.test(t)){
+      closeLists(); closeBq();
+      if(!inTable){ inTable = true; tableRows = []; }
+      var cells = t.replace(/^\|/,"").replace(/\|$/,"").split("|").map(function(c){ return c.trim(); });
+      if(!/^[\s:\-|]+$/.test(t.replace(/\|/g,""))) tableRows.push(cells);
+      continue;
+    } else { flushTable(); }
+    if(/^#### /.test(t)){ closeLists(); closeBq(); html+="<h4>"+inline(t.slice(5))+"</h4>"; continue; }
+    if(/^### /.test(t)){ closeLists(); closeBq(); html+="<h3>"+inline(t.slice(4))+"</h3>"; continue; }
+    if(/^## /.test(t)){ closeLists(); closeBq(); html+="<h2>"+inline(t.slice(3))+"</h2>"; continue; }
+    if(/^# /.test(t)){ closeLists(); closeBq(); html+="<h1>"+inline(t.slice(2))+"</h1>"; continue; }
+    if(/^---+$/.test(t)){ closeLists(); closeBq(); html+="<hr>"; continue; }
+    if(/^>/.test(t)){ closeLists(); if(!inBq){ html+="<blockquote>"; inBq=true; } html += inline(t.replace(/^>\s?/,""))+"<br>"; continue; }
+    if(/^[-*] /.test(t)){ closeBq(); if(!inUl){ closeLists(); html+="<ul>"; inUl=true; } html+="<li>"+inline(t.slice(2))+"</li>"; continue; }
+    if(/^\d+\. /.test(t)){ closeBq(); if(!inOl){ closeLists(); html+="<ol>"; inOl=true; } html+="<li>"+inline(t.replace(/^\d+\.\s/,""))+"</li>"; continue; }
+    if(t===""){ closeLists(); closeBq(); continue; }
+    closeLists(); closeBq(); html+="<p>"+inline(t)+"</p>";
   }
-  close(); return html;
+  flushTable(); closeLists(); closeBq();
+  return html;
 }
 
-function renderPanel(chId, open){
-  var n = byId[chId], c = n.data;
-  var mod = MOD[n.module];
+function tryMark(html, needle){
+  if(!needle || needle.length < 2) return null;
+  var safe = String(needle).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  var probe = new RegExp("(?![^<]*>)("+safe+")", "g");
+  if(!probe.test(html)) return null;
+  return html.replace(new RegExp("(?![^<]*>)("+safe+")", "g"), '<mark class="hit">$1</mark>');
+}
+function markHit(html, label){
+  if(!label) return html;
+  var cands = [String(label).trim()];
+  // 拆出中文块："10个子管理计划" -> "个子管理计划"
+  var chunks = String(label).replace(/[^\u4e00-\u9fa5]+/g, " ").split(/\s+/).filter(function(w){ return w.length >= 2; });
+  chunks.forEach(function(w){ cands.push(w); });
+  // 再逐步去掉开头字，适配正文写法差异（"个子管理计划" -> "子管理计划"）
+  chunks.forEach(function(w){
+    for(var i = 1; i <= w.length - 3; i++) cands.push(w.slice(i));
+  });
+  for(var i=0;i<cands.length;i++){
+    var hit = tryMark(html, cands[i]);
+    if(hit) return hit;
+  }
+  return html;
+}
+function paintPanel(head, body){
+  document.getElementById("panel").innerHTML =
+    '<div class="phead"><button class="pclose" id="pclose">✕</button>'+head+'</div><div class="pbody">'+body+'</div>';
+}
+function openPanelState(open){
+  var p = document.getElementById("panel");
+  p.classList.toggle("open", !!open);
+  document.body.classList.toggle("panelopen", p.classList.contains("open"));
+  var btn = document.getElementById("pclose");
+  if(btn) btn.onclick = function(){ closePanel(); syncDetailBtn(); fitView(); };
+  syncDetailBtn();
+}
+
+function wireChips(){
+  var p = document.getElementById("panel");
+  p.querySelectorAll("[data-sub]").forEach(function(el){
+    el.onclick = function(){
+      var id = el.getAttribute("data-sub");
+      state.highlight = id;
+      renderNodePanel(id, true);
+      render();
+    };
+  });
+}
+
+/* 第三级：章节 */
+function renderChapterPanel(chId, open){
+  var n = byId[chId], c = n.data, mod = MOD[n.module];
   var choiceN = (c.quizOriginal && c.quizOriginal.choice) ? c.quizOriginal.choice.length : 0;
   var essayN  = (c.quizOriginal && c.quizOriginal.essay)  ? c.quizOriginal.essay.length  : 0;
   var selfN   = c.quizSelf ? c.quizSelf.length : 0;
 
-  var html = '<div class="phead">'
-    + '<button class="pclose" id="pclose">✕</button>'
-    + '<div class="pt">第'+n.num+'章 · '+esc(c.title)+'</div>'
-    + '<div class="psub">'+esc(mod && mod.name ? ("第"+({m1:"一",m2:"二",m3:"三"}[n.module]||"")+"部分 · "+mod.name) : "")+'</div>'
-    + '</div><div class="pbody">';
+  var head = '<div class="pt">第'+n.num+'章 · '+esc(c.title)+'</div>'
+    + '<div class="psub">'+esc(mod ? ("第"+({m1:"一",m2:"二",m3:"三"}[n.module]||"")+"部分 · "+mod.name) : "")+'</div>';
 
-  html += '<div class="sec"><div class="h">🧠 作者的写作思路（= 出题逻辑）</div><div class="logic">'+md(c.authorLogic)+'</div></div>';
-
+  var body = '<div class="sec"><div class="h">🧠 作者的写作思路（= 出题逻辑）</div><div class="logic">'+md(c.authorLogic)+'</div></div>';
   if(c.map && c.map.length){
-    html += '<div class="sec"><div class="h">🗺️ 逻辑架构</div>';
+    body += '<div class="sec"><div class="h">🗺️ 逻辑架构（点图中知识点看小节正文）</div>';
     c.map.forEach(function(mi){
-      html += '<div class="mapline"><div class="mt">'+esc(mi.t)+'</div><div class="mc">'+(mi.c||[]).map(esc).join("、")+'</div></div>';
+      body += '<div class="mapline"><div class="mt">'+esc(mi.t)+'</div><div class="mc">'+(mi.c||[]).map(esc).join("、")+'</div></div>';
     });
-    html += '</div>';
+    body += '</div>';
   }
   if(c.sections && c.sections.length){
-    html += '<div class="sec"><div class="h">📖 各节（'+c.sections.length+' 节）</div>';
+    body += '<div class="sec"><div class="h">📖 各节（'+c.sections.length+' 节）</div>';
     c.sections.forEach(function(s){
-      html += '<div class="srow"><span class="sn">'+esc(s.num)+'</span><span class="st">'+esc(s.title)+'</span></div>';
+      body += '<div class="srow"><span class="sn">'+esc(s.num)+'</span><span class="st">'+esc(s.title)+'</span></div>';
     });
-    html += '</div>';
+    body += '</div>';
   }
-  html += '<div class="sec"><div class="h">📝 训练题</div>'
+  body += '<div class="sec"><div class="h">📝 训练题</div>'
     + '<span class="chip">📗 教材原题·选择 '+choiceN+'</span>'
     + '<span class="chip">📝 思考题 '+essayN+'</span>'
     + '<span class="chip">✍️ 自编题 '+selfN+'</span></div>';
+  body += '<div class="btnline"><a class="openbtn" href="index.html#/ch/'+esc(c.id)+'">打开本章完整学习页 →</a></div>';
 
-  html += '<div class="btnline"><a class="openbtn" href="index.html#/ch/'+esc(c.id)+'">进入本章学习 →</a></div>';
-  html += '</div>';
-
-  var p = document.getElementById("panel");
-  p.innerHTML = html;
-  p.classList.toggle("open", !!open);
-  document.body.classList.toggle("panelopen", p.classList.contains("open"));
-  document.getElementById("pclose").onclick = function(){
-    closePanel();
-    syncDetailBtn();
-    fitView();
-  };
-  syncDetailBtn();
+  paintPanel(head, body);
+  openPanelState(open);
 }
+
+/* 第四级知识点 / 第五级考点：直接展示所属小节正文 */
+function renderSectionPanel(nodeId, open){
+  var n = byId[nodeId];
+  if(!n) return;
+  var ch = byId[n.chapter], c = ch.data, mod = MOD[n.module];
+  var sec = n.sec, isSub = (n.type === "sub");
+
+  if(!sec){
+    // 「总览/总体/概述」这类汇总节点：直接回落到整章概览
+    if(/总览|总体|概述/.test(n.label)){
+      renderChapterPanel(n.chapter, open);
+      return;
+    }
+    var src = isSub ? byId[n.map] : n;
+    var head0 = '<div class="pt">'+esc(n.label)+'</div>'
+      + '<div class="psub">第'+ch.num+'章 · '+esc(c.title)+'</div>';
+    var body0 = '<div class="sec"><div class="h">🔗 该知识点的考点（点击查看对应正文）</div>';
+    (src && src.subIds ? src.subIds : []).forEach(function(id){
+      body0 += '<span class="chip" data-sub="'+id+'">'+esc(byId[id].label)+'</span>';
+    });
+    body0 += '</div>';
+    paintPanel(head0, body0);
+    openPanelState(open);
+    wireChips();
+    return;
+  }
+
+  var head = '<div class="pt">'+esc(sec.num)+' '+esc(sec.title)+'</div>'
+    + '<div class="psub">第'+ch.num+'章 · '+esc(c.title)+(isSub ? '　|　考点：'+esc(n.label) : '')+'</div>';
+
+  var body = '';
+  if(sec.position){
+    body += '<div class="postag"><b>📍 定位</b>：'+md(sec.position)+'</div>';
+  }
+  var logic = md(sec.body);
+  if(isSub) logic = markHit(logic, n.label);
+  body += '<div class="logic">'+logic+'</div>';
+
+  var group = isSub ? byId[n.map] : n;
+  if(group && group.subIds && group.subIds.length){
+    body += '<div class="sec" style="margin-top:16px"><div class="h">🔗 本节考点（点击切换）</div>';
+    group.subIds.forEach(function(id){
+      var s = byId[id];
+      body += '<span class="chip'+(s.id===state.highlight?' on':'')+'" data-sub="'+id+'">'+esc(s.label)+'</span>';
+    });
+    body += '</div>';
+  }
+
+  paintPanel(head, body);
+  openPanelState(open);
+  wireChips();
+}
+
+function renderNodePanel(nodeId, open){
+  var n = byId[nodeId];
+  if(!n) return;
+  if(n.type === "chapter") renderChapterPanel(nodeId, open);
+  else renderSectionPanel(nodeId, open);
+}
+
+/* 手机端：面板打开后，把刚点的节点滚进可见区域，避免被面板挡住 */
+function ensureVisible(id){
+  var n = byId[id];
+  if(!n) return;
+  var W = cv.clientWidth, H = cv.clientHeight;
+  if(W >= 701) return;
+  var bottom = panelOpen() ? H - Math.round(H*0.58) : H - 90;
+  var top = 112;
+  var p = w2s(n);
+  if(p.y > bottom - 30 || p.y < top + 16){
+    var target = (top + bottom) / 2;
+    state.offY += (target - p.y);
+    render();
+  }
+}
+
 function closePanel(){
   document.getElementById("panel").classList.remove("open");
   document.body.classList.remove("panelopen");
@@ -701,9 +925,12 @@ function onTap(n){
       setMode("focus", n.id);
     }
   } else {
-    if(n.type === "chapter") setMode("overview");
+    if(n.type === "chapter"){ setMode("overview"); }
     else if(n.type === "mapitem" || n.type === "sub"){
-      state.highlight = (state.highlight === n.id) ? null : n.id;
+      state.highlight = n.id;
+      renderNodePanel(n.id, true);   // 右侧直接显示该小节正文
+      fitView();
+      ensureVisible(n.id);
       render();
     }
   }
@@ -720,8 +947,8 @@ document.getElementById("fitBtn").onclick = function(){ fitView(); };
 document.getElementById("backBtn").onclick = function(){ setMode("overview"); };
 document.getElementById("detailBtn").onclick = function(){
   if(!state.focusId) return;
-  renderPanel(state.focusId, !panelOpen());
-  fitView();
+  if(panelOpen()){ closePanel(); syncDetailBtn(); fitView(); }
+  else { renderNodePanel(state.highlight || state.focusId, true); fitView(); }
 };
 
 document.getElementById("modeBtn").onclick = function(){
@@ -781,6 +1008,8 @@ searchInput.oninput = function(){
       state.openMods[h.node.module] = true;
       setMode("focus", chId);
       state.highlight = h.node.id;
+      if(h.node.type === "mapitem" || h.node.type === "sub") renderNodePanel(h.node.id, true);
+      fitView();
       render();
       searchEl.classList.remove("open");
     };
@@ -814,6 +1043,7 @@ fitView();
 window.__K = {
   state:state, byId:byId, visibleNodes:visibleNodes, w2s:w2s, fitView:fitView,
   render:render, setMode:setMode, relayout:relayout, panelOpen:panelOpen,
+  edgeCount:function(){ return visibleEdges().length; },
   dbg:function(){ return {pointers:pointers.size, pinch:!!pinch, drag:!!drag}; }
 };
 })();
