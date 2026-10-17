@@ -436,7 +436,11 @@ function renderSection(chId, secId){
   el("topTitle").textContent = s.num+" "+s.title;
   el("markDone").onclick = function(){
     if(state.done[secId]) delete state.done[secId]; else state.done[secId]=true;
-    saveState(); renderSection(chId, secId);
+    saveState();
+    // 就地更新按钮，不整节重渲染，避免页面跳回顶部
+    var btn = el("markDone");
+    btn.className = "btn" + (state.done[secId] ? " warn" : "");
+    btn.textContent = state.done[secId] ? "✅ 已掌握（点击取消）" : "✔ 标记为已掌握";
   };
 }
 
