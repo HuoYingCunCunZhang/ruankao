@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#16324f">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>知识网 · 系统集成项目管理工程师</title>
 <style>
 :root{
@@ -104,9 +106,11 @@ body{
 
 @media (min-width:701px){
   .panel{top:calc(48px + env(safe-area-inset-top));right:12px;bottom:12px;width:400px;border-radius:14px}
+  body.panelopen .ctrls{right:426px}
 }
 @media (max-width:700px){
   .panel{left:0;right:0;bottom:0;max-height:66vh;border-radius:16px 16px 0 0}
+  body.panelopen .ctrls{display:none}
   .topbar .title{font-size:14px}
 }
 </style>
@@ -350,7 +354,7 @@ function boundsOf(list){
 
 function uiInsets(){
   var W=cv.clientWidth, H=cv.clientHeight;
-  var ins = {l:30, r:30, t:106, b:80};
+  var ins = {l:30, r:30, t:112, b:80};
   if(panelOpen()){
     if(W<701){ ins.b = Math.round(H*0.60); }
     else { ins.r = 424; }
@@ -590,6 +594,7 @@ function renderPanel(chId, open){
   var p = document.getElementById("panel");
   p.innerHTML = html;
   p.classList.toggle("open", !!open);
+  document.body.classList.toggle("panelopen", p.classList.contains("open"));
   document.getElementById("pclose").onclick = function(){
     closePanel();
     syncDetailBtn();
@@ -597,7 +602,10 @@ function renderPanel(chId, open){
   };
   syncDetailBtn();
 }
-function closePanel(){ document.getElementById("panel").classList.remove("open"); }
+function closePanel(){
+  document.getElementById("panel").classList.remove("open");
+  document.body.classList.remove("panelopen");
+}
 
 /* ================= pointer interaction ================= */
 var pointers = new Map();
