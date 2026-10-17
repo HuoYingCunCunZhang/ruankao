@@ -1,5 +1,5 @@
 /* 离线缓存：安装后即使断网也能打开 */
-const CACHE = "dsj-bkzs-v4";
+const CACHE = "dsj-bkzs-v5";
 const ASSETS = [
   "./",
   "./index.html",
