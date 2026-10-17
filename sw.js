@@ -1,5 +1,5 @@
-/* 离线缓存：安装后即使断网也能打开 */
-const CACHE = "dsj-bkzs-v5";
+﻿/* 绂荤嚎缂撳瓨锛氬畨瑁呭悗鍗充娇鏂綉涔熻兘鎵撳紑 */
+const CACHE = "dsj-bkzs-v6";
 const ASSETS = [
   "./",
   "./index.html",
@@ -29,7 +29,7 @@ self.addEventListener("fetch", (e) => {
   const req = e.request;
   if (req.method !== "GET") return;
 
-  // 页面导航：网络优先，失败回退缓存（保证内容更新及时生效）
+  // 椤甸潰瀵艰埅锛氱綉缁滀紭鍏堬紝澶辫触鍥為€€缂撳瓨锛堜繚璇佸唴瀹规洿鏂板強鏃剁敓鏁堬級
   if (req.mode === "navigate") {
     e.respondWith(
       fetch(req).then((res) => {
@@ -41,7 +41,7 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // 静态资源：缓存优先 + 后台更新（stale-while-revalidate）
+  // 闈欐€佽祫婧愶細缂撳瓨浼樺厛 + 鍚庡彴鏇存柊锛坰tale-while-revalidate锛?
   e.respondWith(
     caches.match(req).then((hit) => {
       const refresh = fetch(req).then((res) => {
@@ -55,3 +55,4 @@ self.addEventListener("fetch", (e) => {
     })
   );
 });
+
