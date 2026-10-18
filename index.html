@@ -432,6 +432,9 @@ function renderSection(chId, secId){
     html += '<div class="position-tag"><b>📍 定位</b>：'+md(s.position)+'</div>';
   }
   html += '<div class="card"><div class="md">'+md(s.body)+'</div></div>';
+  if(s.memorize){
+    html += '<div class="card" style="border-left:4px solid var(--warn);background:var(--warn-soft)"><div class="h2">🧠 记忆技巧</div><div class="md">'+md(s.memorize)+'</div></div>';
+  }
   html += '<div style="display:flex;gap:10px">';
   if(prev) html += '<button class="btn ghost" style="flex:1" onclick="go(\'#/sec/'+c.id+'/'+prev.id+'\')">‹ '+esc(prev.num)+'</button>';
   if(next) html += '<button class="btn ghost" style="flex:1" onclick="go(\'#/sec/'+c.id+'/'+next.id+'\')">'+esc(next.num)+' ›</button>';
