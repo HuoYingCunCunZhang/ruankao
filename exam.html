@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f6feb">
+<title>模拟试卷 · 系统集成项目管理工程师</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#f5f7fb; --card:#ffffff; --ink:#1a2233; --ink2:#5a6478; --ink3:#8a93a6;
+  --line:#e6eaf2; --brand:#1f6feb; --brand-soft:#e8f0fe; --good:#16a34a; --good-soft:#e9f8ef;
+  --bad:#dc2626; --bad-soft:#fdeaea; --warn:#d97706; --warn-soft:#fdf3e3; --shadow:0 1px 2px rgba(20,30,60,.05),0 4px 16px rgba(20,30,60,.06);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;font-size:16px;line-height:1.65}
+#app{max-width:760px;margin:0 auto;min-height:100vh;padding-bottom:40px}
+.topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:8px;padding:10px 14px;background:linear-gradient(135deg,#1f6feb,#2563eb);color:#fff;box-shadow:var(--shadow)}
+.topbar a{color:#fff;text-decoration:none;font-size:14px;background:rgba(255,255,255,.16);padding:6px 10px;border-radius:8px}
+.topbar .title{flex:1;font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar .timer{font-variant-numeric:tabular-nums;font-weight:700;font-size:15px;background:rgba(255,255,255,.18);padding:6px 10px;border-radius:8px}
+.sec{padding:14px}
+h1{font-size:20px;margin:6px 0}
+h2{font-size:16px;margin:18px 0 8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:var(--shadow)}
+.muted{color:var(--ink3);font-size:13px}
+.q{margin-bottom:14px}
+.qtitle{font-weight:600;margin-bottom:8px;font-size:15px}
+.opt{display:flex;gap:8px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;cursor:pointer;transition:.15s}
+.opt .ol{font-weight:700;color:var(--brand)}
+.opt.sel{border-color:var(--brand);background:var(--brand-soft)}
+.opt.right{border-color:var(--good);background:var(--good-soft)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.explain{background:var(--warn-soft);border-radius:10px;padding:10px 12px;font-size:14px;margin-top:6px}
+.explain b{color:var(--warn)}
+.btn{display:block;width:100%;padding:14px;border:none;border-radius:12px;background:var(--brand);color:#fff;font-size:16px;font-weight:600;margin:12px 0;cursor:pointer}
+.btn.ghost{background:#fff;color:var(--brand);border:1px solid var(--brand)}
+.score{font-size:22px;font-weight:800;text-align:center;padding:10px}
+.case{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
+.case .sc{font-size:14.5px;margin-bottom:10px}
+.case .qs{font-size:14.5px}
+.case details{margin-top:8px}
+.case summary{cursor:pointer;color:var(--brand);font-weight:600;font-size:13px}
+.ans{background:var(--good-soft);border-radius:10px;padding:10px 12px;font-size:14px;margin-top:8px}
+.note{background:var(--brand-soft);border-radius:10px;padding:10px 12px;font-size:13px;color:var(--ink2);margin-bottom:12px}
+.badge{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;background:var(--brand-soft);color:var(--brand);margin-left:6px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="topbar">
+    <a href="index.html">‹ 返回</a>
+    <span class="title" id="topTitle">模拟试卷</span>
+    <span class="timer" id="timer">150:00</span>
+  </div>
+  <div class="sec" id="content"></div>
+</div>
+
+<script src="exam.js"></script>
+<script>
+(function(){
+  "use strict";
+  var D = window.EXAM_DATA;
+  if(!D){ document.getElementById('content').innerHTML = '<div class="card">试卷数据加载失败</div>'; return; }
+
+  var answers = new Array(D.choice.length).fill(-1);
+  var submitted = false;
+  var remaining = 150 * 60;
+  var timerEl = document.getElementById('timer');
+  var content = document.getElementById('content');
+
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function fmt(t){ var m=Math.floor(t/60), s=t%60; return (m<10?'0':'')+m+':'+(s<10?'0':'')+s; }
+
+  function renderExam(){
+    var html = '';
+    html += '<h1>'+esc(D.title)+'</h1><div class="muted">'+esc(D.subtitle||'')+'</div>';
+    html += '<div class="note">'+esc(D.note||'')+'</div>';
+    html += '<h2>一、综合知识（75 题，每题 1 分，共 75 分）</h2>';
+    html += '<div class="card">';
+    D.choice.forEach(function(q, i){
+      html += '<div class="q" data-q="'+i+'">';
+      html += '<div class="qtitle">'+(i+1)+'. '+esc(q.q)+(q.src?'<span class="badge">'+esc(q.src)+'</span>':'')+'</div>';
+      q.opts.forEach(function(o, j){
+        html += '<div class="opt" data-i="'+i+'" data-j="'+j+'"><span class="ol">'+String.fromCharCode(65+j)+'</span><span>'+esc(o)+'</span></div>';
+      });
+      html += '</div>';
+    });
+    html += '</div>';
+    html += '<button class="btn" id="submitBtn">交卷并查看成绩</button>';
+    html += '<h2>二、应用技术（案例分析 3 题，共 75 分）</h2>';
+    D.cases.forEach(function(c, i){
+      html += '<div class="case"><div class="sc"><b>案例'+(i+1)+'：</b>'+esc(c.scenario)+'</div>';
+      html += '<div class="qs">';
+      c.questions.forEach(function(q){ html += '<div>'+esc(q)+'</div>'; });
+      html += '</div>';
+      html += '<details><summary>💡 查看参考答案要点</summary><div class="ans">'+esc(c.answer)+'</div></details>';
+      if(c.note){ html += '<div class="muted" style="margin-top:8px">'+esc(c.note)+'</div>'; }
+      html += '</div>';
+    });
+    content.innerHTML = html;
+    content.querySelectorAll('.opt').forEach(function(el){
+      el.onclick = function(){ pick(+el.dataset.i, +el.dataset.j); };
+    });
+    document.getElementById('submitBtn').onclick = submit;
+  }
+
+  function pick(i, j){
+    if(submitted) return;
+    answers[i] = j;
+    var qs = content.querySelectorAll('.q[data-q="'+i+'"] .opt');
+    qs.forEach(function(el){ el.classList.remove('sel'); });
+    content.querySelector('.q[data-q="'+i+'"] .opt[data-j="'+j+'"]').classList.add('sel');
+  }
+
+  function submit(){
+    if(submitted) return;
+    submitted = true;
+    var right = 0;
+    D.choice.forEach(function(q, i){
+      var qs = content.querySelectorAll('.q[data-q="'+i+'"] .opt');
+      qs.forEach(function(el){
+        var j = +el.dataset.j;
+        el.classList.remove('sel');
+        if(j === q.a) el.classList.add('right');
+        else if(j === answers[i]) el.classList.add('wrong');
+      });
+      if(answers[i] === q.a) right++;
+      // 追加解析
+      var qEl = content.querySelector('.q[data-q="'+i+'"]');
+      var ex = document.createElement('div');
+      ex.className = 'explain';
+      ex.innerHTML = (answers[i] === q.a ? '✅ 正确' : '❌ 错误（正确答案：'+String.fromCharCode(65+q.a)+'）') + '<br><b>解析：</b>' + esc(q.explain);
+      qEl.appendChild(ex);
+    });
+    var pct = Math.round(right / D.choice.length * 100);
+    var res = document.createElement('div');
+    res.className = 'card';
+    res.innerHTML = '<div class="score">得分：' + right + ' / ' + D.choice.length + '（' + pct + ' 分）' + (right >= 45 ? ' 🎉 及格线以上' : ' 💪 继续加油') + '</div>'
+      + '<div class="muted" style="text-align:center">综合知识 75 分及格线为 45 分</div>';
+    content.insertBefore(res, content.firstChild);
+    document.getElementById('submitBtn').disabled = true;
+    document.getElementById('submitBtn').textContent = '已交卷';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function tick(){
+    if(submitted) return;
+    remaining--;
+    timerEl.textContent = fmt(remaining);
+    if(remaining <= 0){ timerEl.textContent = '00:00'; submit(); }
+  }
+
+  timerEl.textContent = fmt(remaining);
+  setInterval(tick, 1000);
+  renderExam();
+})();
+</script>
+</body>
+</html>

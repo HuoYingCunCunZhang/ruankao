@@ -344,6 +344,11 @@ function renderHome(){
     + '<div style="flex:1;min-width:0"><div style="font-weight:700">知识网图谱</div><div class="muted" style="font-size:12px">整本教材脉络一图尽览 · 可缩放拖动聚焦</div></div>'
     + '<span style="color:var(--ink3);flex:none">›</span></div>';
 
+  html += '<div class="card" onclick="location.href=\'exam.html\'" style="cursor:pointer;display:flex;align-items:center;gap:12px">'
+    + '<div style="font-size:30px;flex:none">📝</div>'
+    + '<div style="flex:1;min-width:0"><div style="font-weight:700">模拟试卷（75 题 + 3 案例）</div><div class="muted" style="font-size:12px">结合 2025 下半年 / 2026 上半年考情 · 限时 150 分钟</div></div>'
+    + '<span style="color:var(--ink3);flex:none">›</span></div>';
+
   D.modules.forEach(function(m){
     var done=0,tot=0; m.chapters.forEach(function(c){tot+=c.sections.length;done+=chDoneCount(c);});
     var mpct = tot?Math.round(done/tot*100):0;

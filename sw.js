@@ -1,10 +1,12 @@
 /* 离线缓存：安装后即使断网也能打开 */
-const CACHE = "dsj-bkzs-v6";
+const CACHE = "dsj-bkzs-v7";
 const ASSETS = [
   "./",
   "./index.html",
   "./knowledge.html",
+  "./exam.html",
   "./content.js",
+  "./exam.js",
   "./manifest.webmanifest",
   "./icon-192.png",
   "./icon-512.png",
@@ -36,7 +38,7 @@ self.addEventListener("fetch", (e) => {
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(req, copy));
         return res;
-      }).catch(() => caches.match("./index.html"))
+      }).catch(() => caches.match(req).then((hit) => hit || caches.match("./index.html")))
     );
     return;
   }
