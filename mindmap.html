@@ -155,14 +155,25 @@ body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSys
       m.chapters.forEach(function(ch){
         var cn = { t: '第' + ch.num + '章 ' + ch.title, c: [] };
         (ch.map || []).forEach(function(mi){
-          var mm = (mi.t || '').match(/\(([\d.]+)\)/);
+          var mm = (mi.t || '').match(/\(([^)]+)\)/);
           var secNum = mm ? mm[1] : null;
           var sec = null;
           if(secNum){
             sec = (ch.sections || []).find(function(s){ return s.num === secNum; });
-            if(!sec){ sec = (ch.sections || []).find(function(s){ return s.num.indexOf(secNum + '.') === 0; }); }
+            if(!sec){
+              var rm = secNum.match(/^(\d+\.\d+)-/); // 形如 11.2-11.5 的范围
+              var key = rm ? rm[1] : secNum;
+              sec = (ch.sections || []).find(function(s){ return s.num === key; })
+                 || (ch.sections || []).find(function(s){ return s.num.indexOf(key + '.') === 0; });
+            }
+            if(!sec){
+              // 再尝试把范围两端都拆开，取第一段
+              var first = secNum.split('-')[0];
+              sec = (ch.sections || []).find(function(s){ return s.num === first; })
+                 || (ch.sections || []).find(function(s){ return s.num.indexOf(first + '.') === 0; });
+            }
           }
-          var detail = sec ? renderDetail(sec, ch) : '';
+          var detail = sec ? renderDetail(sec, ch) : ('<div class="dt-h">📍 第' + ch.num + '章 ' + esc(ch.title) + ' · 本章总览</div>' + md(ch.authorLogic || '') + (ch.authorLogic ? '' : '<div class="md-p">（本章内容见章节页）</div>'));
           cn.c.push({ t: mi.t, c: (mi.c || []).map(function(x){ return { t: '🎯 ' + x, detail: detail }; }) });
         });
         var ms = (ch.sections || []).filter(function(s){ return s.memorize; });
