@@ -187,6 +187,37 @@ body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSys
     { t: '风险 vs 问题', c: ['风险：未来可能发生的不确定事件（概率×影响）', '问题：已经发生的、需要解决的事项（问题日志）'] }
   ];
 
+  // 最长公共子串长度：把叶子简称吸附到最相近的小节标题
+  function lcsLen(a, b){
+    if(!a || !b) return 0;
+    var max = 0;
+    var dp = [];
+    for(var i = 0; i <= a.length; i++){ dp.push(new Array(b.length + 1).fill(0)); }
+    for(var i = 1; i <= a.length; i++){
+      for(var j = 1; j <= b.length; j++){
+        if(a.charAt(i-1) === b.charAt(j-1)){ dp[i][j] = dp[i-1][j-1] + 1; if(dp[i][j] > max) max = dp[i][j]; }
+        else dp[i][j] = 0;
+      }
+    }
+    return max;
+  }
+  function findSectionByText(ch, text, cands){
+    var best = null, bestScore = 0;
+    (cands || ch.sections || []).forEach(function(s){
+      var sc = lcsLen(text, s.title);
+      if(sc > bestScore){ bestScore = sc; best = s; }
+    });
+    return bestScore >= 2 ? best : null;
+  }
+  function sectionCandidates(ch, secNum){
+    if(!secNum) return ch.sections || [];
+    var key = secNum.split('-')[0];
+    var subs = (ch.sections || []).filter(function(s){ return s.num.indexOf(key + '.') === 0; });
+    if(subs.length) return subs;
+    var exact = (ch.sections || []).find(function(s){ return s.num === secNum; });
+    return exact ? [exact] : (ch.sections || []);
+  }
+
   function buildTree(){
     var root = { t: '系统集成项目管理工程师（第3版）', root: true, c: [] };
     root.c.push({ t: '🔗 跨章主线（把知识串起来）', c: CHAINS.map(function(ch){ return { t: ch.t, c: ch.c.map(function(x){ return { t: '🎯 ' + x }; }) }; }) });
@@ -198,24 +229,20 @@ body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSys
         (ch.map || []).forEach(function(mi){
           var mm = (mi.t || '').match(/\(([^)]+)\)/);
           var secNum = mm ? mm[1] : null;
-          var sec = null;
-          if(secNum){
-            sec = (ch.sections || []).find(function(s){ return s.num === secNum; });
-            if(!sec){
-              var rm = secNum.match(/^(\d+\.\d+)-/); // 形如 11.2-11.5 的范围
-              var key = rm ? rm[1] : secNum;
-              sec = (ch.sections || []).find(function(s){ return s.num === key; })
-                 || (ch.sections || []).find(function(s){ return s.num.indexOf(key + '.') === 0; });
-            }
-            if(!sec){
-              // 再尝试把范围两端都拆开，取第一段
-              var first = secNum.split('-')[0];
-              sec = (ch.sections || []).find(function(s){ return s.num === first; })
-                 || (ch.sections || []).find(function(s){ return s.num.indexOf(first + '.') === 0; });
-            }
+          var cands = sectionCandidates(ch, secNum);
+          var kids = (mi.c || []).map(function(x){
+            var leafText = String(x).trim();
+            var sec = findSectionByText(ch, leafText, cands);
+            if(!sec && cands.length === 1) sec = cands[0]; // 只属于单一小节时直接用它
+            var detail = sec ? renderDetail(sec, ch) : ('<div class="dt-h">📍 第' + ch.num + '章 ' + esc(ch.title) + ' · 本章总览</div>' + md(ch.authorLogic || ''));
+            return { t: '🎯 ' + x, detail: detail };
+          });
+          if(kids.length){
+            cn.c.push({ t: mi.t, c: kids });
+          } else {
+            var sec0 = cands[0] || null;
+            cn.c.push({ t: mi.t, detail: sec0 ? renderDetail(sec0, ch) : ('<div class="dt-h">📍 第' + ch.num + '章 ' + esc(ch.title) + '</div>' + (ch.authorLogic ? md(ch.authorLogic) : '')) });
           }
-          var detail = sec ? renderDetail(sec, ch) : ('<div class="dt-h">📍 第' + ch.num + '章 ' + esc(ch.title) + ' · 本章总览</div>' + md(ch.authorLogic || '') + (ch.authorLogic ? '' : '<div class="md-p">（本章内容见章节页）</div>'));
-          cn.c.push({ t: mi.t, c: (mi.c || []).map(function(x){ return { t: '🎯 ' + x, detail: detail }; }) });
         });
         var ms = (ch.sections || []).filter(function(s){ return s.memorize; });
         if(ms.length){
