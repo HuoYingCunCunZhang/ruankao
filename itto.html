@@ -52,6 +52,9 @@ th{background:#f7f9fc;font-weight:700}
 .badge{display:inline-block;font-size:11px;padding:1px 6px;border-radius:6px;margin:1px 2px;background:var(--brand-soft);color:var(--brand)}
 .badge.out{background:#dcfce7;color:#166534}
 .badge.in{background:#dbeafe;color:#1e40af}
+.conf{padding:9px 0;border-bottom:1px dashed var(--line);font-size:13.5px;line-height:1.7}
+.conf:last-child{border-bottom:none}
+.conf b{color:#b45309}
 .scroll{overflow-x:auto}
 @media (max-width:600px){ table{font-size:12px} th,td{padding:6px 5px} }
 </style>
@@ -113,6 +116,25 @@ th{background:#f7f9fc;font-weight:700}
           <tbody id="fileBody"></tbody>
         </table>
       </div>
+    </div>
+
+    <div class="card">
+      <h2>④ ⚠️ 易混辨析（ITTO 必看，标注易错点）</h2>
+      <div class="muted" style="margin-bottom:6px">下面这些成对概念最容易混，逐条记「区别点」。</div>
+      <div class="conf"><b>变更管理计划 vs 配置管理计划</b><br>变更管理计划：管「变更」怎么提出、评估、审批、实施。<br>配置管理计划：管「配置项」怎么标识、控制、审计、发布。<br>👉 都来自「制定项目管理计划」，都不是 10 个子计划之一。</div>
+      <div class="conf"><b>绩效测量基准(PMB) vs 成本基准</b><br>成本基准：经批准、按时间段分配、<b>不含管理储备</b>。<br>PMB：范围 + 进度 + 成本三基准的<b>集成</b>，用于挣值分析；教材口径：使用 EVM 时「成本基准即绩效测量基准」。</div>
+      <div class="conf"><b>工作绩效数据 vs 信息 vs 报告</b><br>数据：原始、最低层次（指导与管理项目工作产出）。<br>信息：各控制过程提炼、反映偏差。<br>报告：监控项目工作产出，供干系人决策。</div>
+      <div class="conf"><b>管理质量 vs 控制质量</b><br>管理质量（质量保证）：关注<b>过程</b>，质量审计、过程分析。<br>控制质量：关注<b>成果</b>，检查、测试、核实。</div>
+      <div class="conf"><b>确认范围 vs 控制质量</b><br>确认范围：客户<b>验收</b>（可交付成果被接受）。<br>控制质量：可交付成果是否<b>正确</b>（满足质量要求）。</div>
+      <div class="conf"><b>风险登记册 vs 风险报告</b><br>风险登记册：<b>单个</b>风险的详细信息（责任人、应对）。<br>风险报告：<b>整体</b>风险来源 + 单个风险概述。</div>
+      <div class="conf"><b>问题日志 vs 风险登记册</b><br>问题日志：<b>已经发生</b>的问题（问题日志）。<br>风险登记册：<b>未来可能发生</b>的风险。</div>
+      <div class="conf"><b>项目章程 vs 项目管理计划</b><br>项目章程：高层级、<b>授权</b>、标志项目正式启动（发起人批准）。<br>项目管理计划：详细、整合子计划与基准（项目团队编制）。</div>
+      <div class="conf"><b>项目管理计划 vs 项目文件</b><br>项目管理计划：<b>怎么管</b>（子计划 + 基准 + 其他组件）。<br>项目文件：<b>执行产物/记录</b>（登记册、清单、报告）。</div>
+      <div class="conf"><b>估算 vs 估算依据</b><br>估算：<b>数值</b>（多少钱 / 多少时间）。<br>估算依据：<b>支持信息</b>（这个数是怎么算出来的）。</div>
+      <div class="conf"><b>变更请求 vs 变更日志</b><br>变更请求：<b>提出</b>的变更（输入到实施整体变更控制）。<br>变更日志：记录所有变更请求的<b>状态</b>（批准/否决/实施）。</div>
+      <div class="conf"><b>采购管理计划 vs 采购工作说明书(SOW)</b><br>采购管理计划：<b>怎么采购</b>。<br>SOW：<b>采购什么</b>（对拟采购产品/服务/成果的详细描述）。</div>
+      <div class="conf"><b>应急储备 vs 管理储备</b><br>应急储备：应对<b>已识别</b>风险，计入成本基准。<br>管理储备：应对<b>未识别</b>风险，不计入成本基准、计入项目预算。</div>
+      <div class="conf"><b>规划采购管理 vs 实施采购 vs 控制采购</b><br>规划：买什么、怎么买、找谁（本过程）。<br>实施：招标→投标→评标→授标、签合同（12.9）。<br>控制：监督合同绩效、关闭合同（13.9）。</div>
     </div>
   </div>
 </div>
