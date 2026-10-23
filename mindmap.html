@@ -42,6 +42,17 @@ body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSys
 .legend span{display:inline-flex;align-items:center;gap:4px}
 .dot{width:9px;height:9px;border-radius:3px;display:inline-block}
 .dot.a{background:#f59e0b}.dot.g{background:#10b981}.dot.b{background:#1f6feb}
+/* 叶子展开的重点内容卡片 */
+.dt{margin:2px 0 10px 22px;padding:10px 12px;background:#fff;border-left:3px solid #f59e0b;border-radius:8px;font-size:13px;line-height:1.75;box-shadow:0 1px 5px rgba(0,0,0,.07)}
+.dt-h{font-weight:700;color:#b45309;margin-bottom:6px}
+.dt-mem{margin-top:8px;padding:8px 10px;background:#fef3c7;border-radius:8px;color:#92400e;font-size:12.5px}
+.dt .md-h{font-weight:700;margin:8px 0 4px;color:var(--ink)}
+.dt .md-p{margin:2px 0}
+.dt table{width:100%;border-collapse:collapse;font-size:12px;margin:6px 0}
+.dt th,.dt td{border:1px solid #e5eaf3;padding:4px 6px;text-align:left}
+.dt th{background:#f7f9fc}
+.dt ul{margin:4px 0;padding-left:18px}
+.lbl.leaf.has-detail>.txt{color:#b45309}
 </style>
 </head>
 <body>
@@ -70,6 +81,46 @@ body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSys
   if(!D){ document.getElementById('tree').innerHTML = '<div class="note">内容加载失败</div>'; return; }
 
   function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  // 轻量 markdown 渲染（用于叶子展开的重点内容）
+  function md(src){
+    if(!src) return '';
+    var lines = String(src).split('\n');
+    var out = '', inUl = false, inTable = false, rows = [];
+    function closeUl(){ if(inUl){ out += '</ul>'; inUl = false; } }
+    function inline(t){ return esc(t).replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>'); }
+    function flushTable(){
+      if(!inTable) return; inTable = false;
+      if(!rows.length) return;
+      var head = rows[0], body = rows.slice(1);
+      out += '<table><thead><tr>' + head.map(function(c){ return '<th>'+inline(c)+'</th>'; }).join('') + '</tr></thead><tbody>'
+        + body.map(function(r){ return '<tr>' + r.map(function(c){ return '<td>'+inline(c)+'</td>'; }).join('') + '</tr>'; }).join('')
+        + '</tbody></table>';
+      rows = [];
+    }
+    lines.forEach(function(line){
+      var t = line.trim();
+      if(/^\|.*\|$/.test(t)){
+        if(!inTable){ inTable = true; rows = []; }
+        var cells = t.replace(/^\|/,'').replace(/\|$/,'').split('|').map(function(c){ return c.trim(); });
+        if(!/^[\s:\-|]+$/.test(t.replace(/\|/g,''))) rows.push(cells);
+        return;
+      } else { flushTable(); }
+      if(/^#{1,4}\s/.test(t)){ closeUl(); out += '<div class="md-h">'+inline(t.replace(/^#+\s*/,''))+'</div>'; return; }
+      if(/^[-*]\s/.test(t)){ if(!inUl){ out += '<ul>'; inUl = true; } out += '<li>'+inline(t.slice(2))+'</li>'; return; }
+      if(t === ''){ closeUl(); return; }
+      closeUl(); out += '<div class="md-p">'+inline(t)+'</div>';
+    });
+    flushTable(); closeUl();
+    return out;
+  }
+
+  function renderDetail(sec, ch){
+    var h = '<div class="dt-h">📍 第' + ch.num + '章 ' + esc(ch.title) + ' · ' + esc(sec.num) + ' ' + esc(sec.title) + '</div>';
+    h += md(sec.body);
+    if(sec.memorize){ h += '<div class="dt-mem">🧠 记忆技巧：<br>' + md(sec.memorize) + '</div>'; }
+    return h;
+  }
 
   // 跨章主线：把知识串起来
   var CHAINS = [
@@ -104,11 +155,15 @@ body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSys
       m.chapters.forEach(function(ch){
         var cn = { t: '第' + ch.num + '章 ' + ch.title, c: [] };
         (ch.map || []).forEach(function(mi){
-          cn.c.push({ t: mi.t, c: (mi.c || []).map(function(x){ return { t: '🎯 ' + x }; }) });
+          var mm = (mi.t || '').match(/\(([\d.]+)\)/);
+          var secNum = mm ? mm[1] : null;
+          var sec = secNum ? (ch.sections || []).find(function(s){ return s.num === secNum; }) : null;
+          var detail = sec ? renderDetail(sec, ch) : '';
+          cn.c.push({ t: mi.t, c: (mi.c || []).map(function(x){ return { t: '🎯 ' + x, detail: detail }; }) });
         });
         var ms = (ch.sections || []).filter(function(s){ return s.memorize; });
         if(ms.length){
-          cn.c.push({ t: '💡 记忆技巧', c: ms.map(function(s){ return { t: '🧠 ' + s.num + ' ' + s.title + '：' + s.memorize }; }) });
+          cn.c.push({ t: '💡 记忆技巧', c: ms.map(function(s){ return { t: '🧠 ' + s.num + ' ' + s.title + '：' + s.memorize, detail: renderDetail(s, ch) }; }) });
         }
         mn.c.push(cn);
       });
@@ -121,16 +176,19 @@ body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSys
 
   function renderNode(node, depth){
     var hasKids = node.c && node.c.length;
+    var hasDetail = !hasKids && node.detail;
     var open = depth < OPEN_DEPTH;
     var h = '<div class="nd">';
-    h += '<div class="lbl ' + (hasKids ? 'branch' : 'leaf') + (node.root ? ' root' : '') + '" data-d="' + depth + '">';
-    h += '<span class="tg' + (hasKids ? '' : ' leafdot') + '">' + (hasKids ? (open ? '▾' : '▸') : '●') + '</span>';
+    h += '<div class="lbl ' + (hasKids ? 'branch' : 'leaf') + (hasDetail ? ' has-detail' : '') + (node.root ? ' root' : '') + '" data-d="' + depth + '">';
+    h += '<span class="tg' + (hasKids ? '' : (hasDetail ? '' : ' leafdot')) + '">' + (hasKids ? (open ? '▾' : '▸') : (hasDetail ? '▸' : '●')) + '</span>';
     h += '<span class="txt">' + esc(node.t) + '</span>';
     h += '</div>';
     if(hasKids){
       h += '<div class="kids" style="display:' + (open ? 'block' : 'none') + '">';
       node.c.forEach(function(ch){ h += renderNode(ch, depth + 1); });
       h += '</div>';
+    } else if(hasDetail){
+      h += '<div class="dt" style="display:none">' + node.detail + '</div>';
     }
     return h + '</div>';
   }
@@ -140,14 +198,19 @@ body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSys
   container.innerHTML = renderNode(tree, 0);
 
   container.addEventListener('click', function(e){
-    var lbl = e.target.closest('.lbl.branch');
+    var lbl = e.target.closest('.lbl');
     if(!lbl) return;
-    var kids = lbl.nextElementSibling;
-    if(!kids) return;
-    var open = kids.style.display !== 'none';
-    kids.style.display = open ? 'none' : 'block';
-    var tg = lbl.querySelector('.tg');
-    if(tg) tg.textContent = open ? '▸' : '▾';
+    var nxt = lbl.nextElementSibling;
+    if(!nxt) return;
+    if(nxt.classList.contains('kids')){
+      var open = nxt.style.display !== 'none';
+      nxt.style.display = open ? 'none' : 'block';
+      var tg = lbl.querySelector('.tg'); if(tg) tg.textContent = open ? '▸' : '▾';
+    } else if(nxt.classList.contains('dt')){
+      var show = nxt.style.display === 'none';
+      nxt.style.display = show ? 'block' : 'none';
+      var tg2 = lbl.querySelector('.tg'); if(tg2) tg2.textContent = show ? '▾' : '▸';
+    }
   });
 
   window.expandAll = function(){
