@@ -53,12 +53,7 @@ body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSys
 .dt th{background:#f7f9fc}
 .dt ul{margin:4px 0;padding-left:18px}
 .lbl.leaf.has-detail>.txt{color:#b45309}
-/* 搜索 */
-.searchbar{padding:0 0 10px;position:relative}
-.searchbar input{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-size:14px;outline:none;background:#fff}
-.searchbar input:focus{border-color:var(--brand)}
-.sresults{position:absolute;left:0;right:0;top:46px;z-index:30;background:#fff;border:1px solid var(--line);border-radius:10px;max-height:50vh;overflow:auto;display:none;box-shadow:0 8px 24px rgba(0,0,0,.12)}
-.sresults.open{display:block}
+/* 搜索结果条目 */
 .sr{padding:9px 12px;border-bottom:1px solid var(--line);font-size:13px;cursor:pointer}
 .sr:last-child{border-bottom:none}
 .sr:hover{background:var(--brand-soft)}
@@ -75,6 +70,15 @@ body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSys
 .sheet-title{flex:1;font-weight:700;font-size:15px;line-height:1.4;overflow:hidden;text-overflow:ellipsis}
 .sheet-close{flex:none;width:32px;height:32px;border:none;border-radius:8px;background:#f1f5f9;color:var(--ink2);font-size:16px;cursor:pointer}
 .sheet-body{padding:12px 16px 28px;overflow-y:auto;overflow-x:auto;-webkit-overflow-scrolling:touch;flex:1}
+/* 固定搜索浮层（不随页面滚动） */
+.search-overlay{position:fixed;left:0;right:0;top:calc(52px + env(safe-area-inset-top));z-index:35;padding:10px 12px;background:rgba(243,246,251,.98);box-shadow:0 6px 16px rgba(0,0,0,.1);display:none}
+.search-overlay.open{display:block}
+.search-overlay .srow{display:flex;gap:8px;align-items:center;max-width:860px;margin:0 auto}
+.search-overlay input{flex:1;box-sizing:border-box;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-size:14px;outline:none;background:#fff}
+.search-overlay input:focus{border-color:var(--brand)}
+.search-overlay .sclose{flex:none;width:40px;height:40px;border:1px solid var(--line);border-radius:10px;background:#fff;font-size:15px;cursor:pointer}
+.search-overlay .sresults{max-width:860px;margin:8px auto 0;background:#fff;border:1px solid var(--line);border-radius:10px;max-height:55vh;overflow:auto;display:none}
+.search-overlay .sresults.open{display:block}
 </style>
 </head>
 <body>
@@ -82,8 +86,8 @@ body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSys
   <div class="topbar">
     <a href="index.html">‹ 返回</a>
     <span class="title">思维导图 · 知识串联版</span>
-    <button onclick="expandAll()">展开</button>
-    <button onclick="collapseAll()">收起</button>
+    <button id="searchBtn" title="搜索">🔍</button>
+    <button id="toggleBtn" onclick="toggleAll()">展开</button>
   </div>
   <div class="content">
     <div class="note">📌 层级：全书 → 3 大部分 → 18 章 → 逻辑架构节点 → <b>考点</b>。点 ▾ 展开；<b>琥珀色叶子 = 考点/记忆点</b>，绿色 = 记忆技巧。</div>
@@ -92,12 +96,15 @@ body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSys
       <span><i class="dot a"></i>考点（叶子）</span>
       <span><i class="dot g"></i>记忆技巧</span>
     </div>
-    <div class="searchbar">
-      <input id="msearch" placeholder="🔍 搜索节点或卡片内容（如：挣值、质量成本、关键路径）" autocomplete="off">
-      <div class="sresults" id="mresults"></div>
-    </div>
     <div class="tree" id="tree"></div>
   </div>
+</div>
+<div class="search-overlay" id="searchOverlay">
+  <div class="srow">
+    <input id="msearch" placeholder="🔍 搜索节点或卡片内容（如：挣值、质量成本、关键路径）" autocomplete="off">
+    <button class="sclose" id="searchClose">✕</button>
+  </div>
+  <div class="sresults" id="mresults"></div>
 </div>
 <div class="sheet-backdrop" id="sheetBackdrop"></div>
 <div class="sheet" id="sheet">
@@ -331,6 +338,15 @@ body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSys
     sResults.innerHTML = html;
     sResults.classList.add('open');
   }
+  var overlay = document.getElementById('searchOverlay');
+  document.getElementById('searchBtn').onclick = function(){
+    overlay.classList.add('open');
+    setTimeout(function(){ sInput.focus(); }, 60);
+  };
+  document.getElementById('searchClose').onclick = function(){
+    overlay.classList.remove('open');
+    sResults.classList.remove('open');
+  };
   sInput.addEventListener('input', doSearch);
   sResults.addEventListener('click', function(e){
     var r = e.target.closest('.sr');
@@ -338,18 +354,23 @@ body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSys
     goToNode(r.dataset.id);
     sResults.classList.remove('open');
     sInput.value = '';
-  });
-  document.addEventListener('click', function(e){
-    if(!e.target.closest('.searchbar')) sResults.classList.remove('open');
+    overlay.classList.remove('open');
   });
 
-  window.expandAll = function(){
-    container.querySelectorAll('.kids').forEach(function(k){ k.style.display = 'block'; });
-    container.querySelectorAll('.lbl.branch .tg').forEach(function(t){ t.textContent = '▾'; });
-  };
-  window.collapseAll = function(){
-    container.querySelectorAll('.kids').forEach(function(k){ k.style.display = 'none'; });
-    container.querySelectorAll('.lbl.branch .tg').forEach(function(t){ t.textContent = '▸'; });
+  // 展开/收起 合并为一个切换按钮
+  var isExpanded = false;
+  window.toggleAll = function(){
+    isExpanded = !isExpanded;
+    var btn = document.getElementById('toggleBtn');
+    if(isExpanded){
+      container.querySelectorAll('.kids').forEach(function(k){ k.style.display = 'block'; });
+      container.querySelectorAll('.lbl.branch .tg').forEach(function(t){ t.textContent = '▾'; });
+      if(btn) btn.textContent = '收起';
+    } else {
+      container.querySelectorAll('.kids').forEach(function(k){ k.style.display = 'none'; });
+      container.querySelectorAll('.lbl.branch .tg').forEach(function(t){ t.textContent = '▸'; });
+      if(btn) btn.textContent = '展开';
+    }
   };
 })();
 </script>
