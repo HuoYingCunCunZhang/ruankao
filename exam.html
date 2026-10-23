@@ -46,6 +46,12 @@ h2{font-size:16px;margin:18px 0 8px}
 .ans{background:var(--good-soft);border-radius:10px;padding:10px 12px;font-size:14px;margin-top:8px}
 .note{background:var(--brand-soft);border-radius:10px;padding:10px 12px;font-size:13px;color:var(--ink2);margin-bottom:12px}
 .badge{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;background:var(--brand-soft);color:var(--brand);margin-left:6px}
+.mini-btn{display:inline-block;margin:2px 0 8px;padding:6px 12px;border:1px solid var(--brand);border-radius:8px;background:#fff;color:var(--brand);font-size:13px;font-weight:600;cursor:pointer}
+.revealbox{display:none;background:var(--brand-soft);border-radius:10px;padding:10px 12px;margin:4px 0 12px;font-size:14px;line-height:1.7}
+.revealbox.open{display:block}
+.reveal-title{font-weight:700;color:var(--good);margin-bottom:6px}
+.reveal-line{margin-bottom:4px}
+.reveal-line b{color:var(--ink)}
 </style>
 </head>
 <body>
@@ -86,6 +92,14 @@ h2{font-size:16px;margin:18px 0 8px}
       q.opts.forEach(function(o, j){
         html += '<div class="opt" data-i="'+i+'" data-j="'+j+'"><span class="ol">'+String.fromCharCode(65+j)+'</span><span>'+esc(o)+'</span></div>';
       });
+      html += '<button class="mini-btn" data-reveal="'+i+'">🔍 查看答案</button>';
+      html += '<div class="revealbox" id="rev-'+i+'">'
+        + '<div class="reveal-title">✅ 正确答案：'+String.fromCharCode(65+q.a)+'. '+esc(q.opts[q.a])+'</div>'
+        + '<div class="reveal-line"><b>📍 考点定位：</b>'+esc(q.chap||'')+'</div>'
+        + '<div class="reveal-line"><b>🎯 考点：</b>'+esc(q.point||'')+'</div>'
+        + '<div class="reveal-line"><b>🔑 辨析结论：</b>'+esc(q.contrast||'')+'</div>'
+        + '<div class="reveal-line"><b>📖 解析：</b>'+esc(q.explain||'')+'</div>'
+        + '</div>';
       html += '</div>';
     });
     html += '</div>';
@@ -96,13 +110,20 @@ h2{font-size:16px;margin:18px 0 8px}
       html += '<div class="qs">';
       c.questions.forEach(function(q){ html += '<div>'+esc(q)+'</div>'; });
       html += '</div>';
-      html += '<details><summary>💡 查看参考答案要点</summary><div class="ans">'+esc(c.answer)+'</div></details>';
+      html += '<details><summary>💡 查看参考答案要点</summary><div class="ans">'+(c.chap?'<div style="margin-bottom:6px"><b>📍 考点定位：</b>'+esc(c.chap)+'</div>':'')+esc(c.answer)+'</div></details>';
       if(c.note){ html += '<div class="muted" style="margin-top:8px">'+esc(c.note)+'</div>'; }
       html += '</div>';
     });
     content.innerHTML = html;
     content.querySelectorAll('.opt').forEach(function(el){
       el.onclick = function(){ pick(+el.dataset.i, +el.dataset.j); };
+    });
+    content.querySelectorAll('[data-reveal]').forEach(function(el){
+      el.onclick = function(){
+        var box = document.getElementById('rev-'+el.dataset.reveal);
+        var open = box.classList.toggle('open');
+        el.textContent = open ? '🔍 收起答案' : '🔍 查看答案';
+      };
     });
     document.getElementById('submitBtn').onclick = submit;
   }
