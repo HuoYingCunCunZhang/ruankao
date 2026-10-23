@@ -1,10 +1,11 @@
 /* 离线缓存：安装后即使断网也能打开 */
-const CACHE = "dsj-bkzs-v8";
+const CACHE = "dsj-bkzs-v9";
 const ASSETS = [
   "./",
   "./index.html",
   "./knowledge.html",
   "./mindmap.html",
+  "./itto.html",
   "./exam.html",
   "./content.js",
   "./exam.js",
