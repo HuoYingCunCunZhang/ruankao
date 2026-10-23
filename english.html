@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#16324f">
+<title>英文考点冲刺 · 缩写与术语</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#f3f6fb; --card:#ffffff; --ink:#1a2233; --ink2:#5a6478; --ink3:#8a93a6;
+  --line:#e2e8f2; --brand:#1f6feb; --brand-soft:#e8f0fe; --amber:#b45309; --green:#166534;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;font-size:15px;line-height:1.65}
+#app{max-width:900px;margin:0 auto;min-height:100vh;padding-bottom:40px}
+.topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:8px;padding:10px 12px;background:linear-gradient(135deg,#16324f,#1f4e7a);color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+.topbar a{flex:none;color:#fff;text-decoration:none;font-size:14px;background:rgba(255,255,255,.15);padding:6px 10px;border-radius:8px}
+.topbar .title{flex:1;font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.content{padding:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 1px 2px rgba(20,30,60,.05),0 4px 16px rgba(20,30,60,.06)}
+h1{font-size:20px;margin:4px 0 6px}
+h2{font-size:16px;margin:0 0 10px}
+.muted{color:var(--ink3);font-size:13px}
+.note{background:var(--brand-soft);border-radius:10px;padding:10px 12px;font-size:13px;color:var(--ink2);margin-bottom:12px}
+.step{display:flex;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line)}
+.step:last-child{border-bottom:none}
+.step .n{flex:none;width:22px;height:22px;border-radius:6px;background:var(--brand);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:2px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{background:#f7f9fc;font-weight:700}
+.abbr{font-weight:700;color:var(--brand);font-family:Consolas,Menlo,monospace}
+.grp-t{font-weight:700;margin:12px 0 4px;color:var(--ink2);font-size:13.5px}
+.grp-t:first-child{margin-top:0}
+.conf{padding:8px 0;border-bottom:1px dashed var(--line);font-size:13.5px}
+.conf:last-child{border-bottom:none}
+.conf b{color:var(--amber)}
+.q{margin-bottom:12px;padding:10px 12px;background:#f8fafc;border-radius:10px}
+.q .qt{font-weight:600;margin-bottom:6px}
+.q .op{cursor:pointer;padding:5px 8px;border-radius:8px;border:1px solid var(--line);margin-bottom:5px}
+.q .op.sel{border-color:var(--brand);background:var(--brand-soft)}
+.q .op.right{border-color:#16a34a;background:#dcfce7}
+.q .op.wrong{border-color:#dc2626;background:#fee2e2}
+.q .ex{display:none;margin-top:6px;font-size:13px;background:#fef3c7;border-radius:8px;padding:8px 10px}
+.q .ex.open{display:block}
+.q .ex b{color:var(--amber)}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="topbar">
+    <a href="index.html">‹ 返回</a>
+    <span class="title">英文考点冲刺 · 缩写与术语</span>
+  </div>
+  <div class="content">
+
+    <div class="note">
+      📌 软考中级的「英文题」核心不是考阅读，而是考<b>英文缩写 / 术语 ↔ 中文概念</b>的对应。下面先讲 3 类题型怎么破，再给高频缩写速查、易混对比和例题。
+    </div>
+
+    <div class="card">
+      <h2>① 3 类英文题 + 应对策略</h2>
+      <div class="step"><div class="n">1</div><div><b>缩写 ↔ 含义题</b>（最常见）<br>给出 IaaS / SaaS / RACI，问中文含义，或反过来。<br>👉 <b>抓全称</b>：IaaS=Infrastructure as a Service=基础设施即服务；SaaS=Software as a Service=软件即服务；PaaS=Platform as a Service=平台即服务。先记「首字母 + 关键词」。</div></div>
+      <div class="step"><div class="n">2</div><div><b>英文描述 → 概念识别题</b><br>给一句英文定义，问是哪个概念（如 "a formal document that authorizes the project" → Project Charter）。<br>👉 <b>抓锚点词</b>：baseline（基准）、audit（审计）、change request（变更请求）、stakeholder（干系人）、deliverable（可交付成果）。不逐字翻译，找专业术语。</div></div>
+      <div class="step"><div class="n">3</div><div><b>易混缩写对比题</b><br>如 IaaS/PaaS/SaaS、RFI/RFQ/RFP、SPI/CPI、EV/PV/AC。<br>👉 <b>记区别点</b>：SPI 看进度、CPI 看成本；RFI 问信息、RFQ 问报价、RFP 问建议。</div></div>
+      <div class="step"><div class="n">4</div><div><b>通用技巧</b><br>① 先看选项再读题干；② 排除中文对应明显错的；③ 不纠结生词，抓住认识的术语锚点；④ 缩写题若全称记不清，用「首字母 + 场景」推。</div></div>
+    </div>
+
+    <div class="card">
+      <h2>② 高频英文缩写速查（按主题）</h2>
+      <div id="abbrBox"></div>
+    </div>
+
+    <div class="card">
+      <h2>③ 易混缩写对比（必看）</h2>
+      <div class="conf"><b>IaaS / PaaS / SaaS</b>：基础设施即服务（租硬件）/ 平台即服务（租平台）/ 软件即服务（租软件）。</div>
+      <div class="conf"><b>RFI / RFQ / RFP</b>：信息邀请书（问信息）/ 报价邀请书（问报价）/ 建议邀请书（问建议，最正式）。</div>
+      <div class="conf"><b>EV / PV / AC</b>：挣值（实际完成×预算）/ 计划值 / 实际成本。</div>
+      <div class="conf"><b>SV / CV</b>：进度偏差=EV-PV / 成本偏差=EV-AC。</div>
+      <div class="conf"><b>SPI / CPI</b>：进度绩效指数=EV/PV / 成本绩效指数=EV/AC。</div>
+      <div class="conf"><b>EAC / ETC / BAC</b>：完工估算 / 完工尚需估算 / 完工预算。</div>
+      <div class="conf"><b>WBS / OBS / RBS</b>：工作分解结构 / 组织分解结构 / 资源分解结构。</div>
+      <div class="conf"><b>RAM / RACI</b>：职责分配矩阵 / 责任分配矩阵（R执行、A负责、C咨询、I知情）。</div>
+      <div class="conf"><b>CCB / CMO</b>：变更控制委员会（决策机构）/ 配置管理员（作业机构）。</div>
+      <div class="conf"><b>ROI / NPV / IRR</b>：投资回报率 / 净现值 / 内部收益率。</div>
+      <div class="conf"><b>RPO / RTO</b>：恢复点目标（允许丢失的数据量）/ 恢复时间目标（恢复所需时间）。</div>
+      <div class="conf"><b>CIA</b>：保密性 Confidentiality / 完整性 Integrity / 可用性 Availability。</div>
+    </div>
+
+    <div class="card">
+      <h2>④ 典型例题（点选项作答，自动判分）</h2>
+      <div id="quizBox"></div>
+    </div>
+
+    <div class="card">
+      <h2>⑤ 考前 30 秒口诀</h2>
+      <div class="note" style="margin:0">
+        缩写题 → <b>先抓全称、再看选项</b>；<br>
+        句子题 → <b>找锚点词（baseline / audit / request / stakeholder）</b>；<br>
+        易混题 → <b>问信息 RFI、问报价 RFQ、问建议 RFP；SPI 管进度、CPI 管成本</b>；<br>
+        实在不会 → <b>排除法 + 场景联想</b>，别空着。
+      </div>
+    </div>
+
+  </div>
+</div>
+<script>
+(function(){
+  "use strict";
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  // 高频缩写（按主题）
+  var GROUPS = [
+    { t:'网络与通信', items:[
+      ['OSI','Open Systems Interconnection','开放系统互连参考模型（7层）'],
+      ['TCP','Transmission Control Protocol','传输控制协议（可靠、面向连接）'],
+      ['UDP','User Datagram Protocol','用户数据报协议（不可靠、无连接）'],
+      ['IP','Internet Protocol','网际协议（网络层）'],
+      ['HTTP','HyperText Transfer Protocol','超文本传输协议'],
+      ['FTP','File Transfer Protocol','文件传输协议'],
+      ['SMTP','Simple Mail Transfer Protocol','简单邮件传输协议'],
+      ['LAN / MAN / WAN','Local / Metropolitan / Wide Area Network','局域网 / 城域网 / 广域网'],
+      ['SDN','Software Defined Network','软件定义网络（控制面与数据面分离）'],
+      ['5G','5th Generation Mobile Networks','第五代移动通信'],
+      ['eMBB','enhanced Mobile Broadband','增强移动宽带'],
+      ['uRLLC','ultra-Reliable Low-Latency Communication','超高可靠低时延通信'],
+      ['mMTC','massive Machine Type Communication','海量机器类通信'],
+      ['RFID','Radio Frequency Identification','射频识别'],
+      ['IoT','Internet of Things','物联网']
+    ]},
+    { t:'云计算与新技术', items:[
+      ['IaaS','Infrastructure as a Service','基础设施即服务'],
+      ['PaaS','Platform as a Service','平台即服务'],
+      ['SaaS','Software as a Service','软件即服务'],
+      ['AI','Artificial Intelligence','人工智能'],
+      ['ML','Machine Learning','机器学习'],
+      ['NLP','Natural Language Processing','自然语言处理'],
+      ['VR / AR','Virtual Reality / Augmented Reality','虚拟现实 / 增强现实'],
+      ['4V','Volume/Variety/Value/Velocity','大数据的四个特征'],
+      ['DaaS','Data as a Service','数据即服务']
+    ]},
+    { t:'软件工程', items:[
+      ['SRS','Software Requirement Specification','软件需求规格说明书'],
+      ['UML','Unified Modeling Language','统一建模语言'],
+      ['QFD','Quality Function Deployment','质量功能部署'],
+      ['OOA / OOD','Object-Oriented Analysis / Design','面向对象分析 / 设计'],
+      ['CMMI','Capability Maturity Model Integration','能力成熟度模型集成'],
+      ['CSM','Capability Maturity Model for Software','软件过程能力成熟度'],
+      ['PDCA','Plan-Do-Check-Act','戴明环'],
+      ['CI/CD','Continuous Integration / Continuous Delivery','持续集成 / 持续交付']
+    ]},
+    { t:'数据库与数据工程', items:[
+      ['RDBMS','Relational Database Management System','关系型数据库管理系统'],
+      ['NoSQL','Not Only SQL','非关系型数据库'],
+      ['ETL','Extract-Transform-Load','抽取-转换-加载'],
+      ['OLAP / OLTP','Online Analytical / Transactional Processing','联机分析处理 / 联机事务处理'],
+      ['ROLAP / MOLAP / HOLAP','Relational / Multidimensional / Hybrid OLAP','关系型 / 多维 / 混合 OLAP'],
+      ['RPO / RTO','Recovery Point Objective / Recovery Time Objective','恢复点目标 / 恢复时间目标']
+    ]},
+    { t:'系统集成', items:[
+      ['SOA','Service-Oriented Architecture','面向服务架构'],
+      ['CORBA','Common Object Request Broker Architecture','公共对象请求代理体系结构'],
+      ['COM / DCOM','Component Object Model / Distributed COM','组件对象模型 / 分布式 COM'],
+      ['J2EE','Java 2 Platform Enterprise Edition','Java 2 企业版'],
+      ['API','Application Programming Interface','应用程序编程接口'],
+      ['B/S / C/S','Browser/Server / Client/Server','浏览器/服务器 / 客户端/服务器'],
+      ['SAN / NAS / DAS','Storage / Network Attached Storage、Direct Attached Storage','存储区域网络 / 网络接入存储 / 直连式存储']
+    ]},
+    { t:'信息安全', items:[
+      ['CIA','Confidentiality / Integrity / Availability','保密性 / 完整性 / 可用性'],
+      ['RSA','Rivest-Shamir-Adleman','非对称加密算法'],
+      ['DES','Data Encryption Standard','数据加密标准（对称）'],
+      ['IDS / IPS','Intrusion Detection / Prevention System','入侵检测 / 入侵防护系统'],
+      ['VPN','Virtual Private Network','虚拟专用网'],
+      ['WPDRRC','Warning-Protection-Detection-Response-Recovery-Counterattack','预警-保护-检测-响应-恢复-反击'],
+      ['PKI','Public Key Infrastructure','公钥基础设施']
+    ]},
+    { t:'项目管理', items:[
+      ['PMBOK','Project Management Body of Knowledge','项目管理知识体系'],
+      ['PMP','Project Management Professional','项目管理专业人士'],
+      ['PMO','Project Management Office','项目管理办公室'],
+      ['WBS','Work Breakdown Structure','工作分解结构'],
+      ['OBS','Organizational Breakdown Structure','组织分解结构'],
+      ['RBS','Resource / Risk Breakdown Structure','资源/风险分解结构'],
+      ['RAM','Responsibility Assignment Matrix','职责分配矩阵'],
+      ['RACI','Responsible / Accountable / Consulted / Informed','执行/负责/咨询/知情'],
+      ['CCB','Change Control Board','变更控制委员会'],
+      ['CMO','Configuration Management Officer','配置管理员'],
+      ['SCM','Software Configuration Management','软件配置管理'],
+      ['EVM','Earned Value Management','挣值管理'],
+      ['PV / EV / AC','Planned Value / Earned Value / Actual Cost','计划值 / 挣值 / 实际成本'],
+      ['SV / CV','Schedule / Cost Variance','进度偏差 / 成本偏差'],
+      ['SPI / CPI','Schedule / Cost Performance Index','进度/成本绩效指数'],
+      ['BAC / EAC / ETC','Budget at Completion / Estimate at Completion / Estimate to Complete','完工预算/完工估算/完工尚需估算'],
+      ['TCPI','To-Complete Performance Index','完工尚需绩效指数'],
+      ['SOW','Statement of Work','工作说明书'],
+      ['RFI / RFQ / RFP','Request for Information / Quotation / Proposal','信息/报价/建议邀请书'],
+      ['SLA','Service Level Agreement','服务级别协议'],
+      ['ROI / NPV / IRR','Return on Investment / Net Present Value / Internal Rate of Return','投资回报率/净现值/内部收益率']
+    ]},
+    { t:'标准规范', items:[
+      ['GB / GB/T / GB/Z','National Standard (Mandatory / Recommended / Guidance)','强制性/推荐性/指导性国家标准'],
+      ['DB','Local Standard','地方标准'],
+      ['ISO','International Organization for Standardization','国际标准化组织'],
+      ['IEC','International Electrotechnical Commission','国际电工委员会']
+    ]}
+  ];
+
+  var box = document.getElementById('abbrBox');
+  GROUPS.forEach(function(g){
+    box.innerHTML += '<div class="grp-t">'+esc(g.t)+'</div><table><thead><tr><th style="width:24%">缩写</th><th style="width:42%">英文全称</th><th>中文含义</th></tr></thead><tbody>'
+      + g.items.map(function(it){ return '<tr><td class="abbr">'+esc(it[0])+'</td><td>'+esc(it[1])+'</td><td>'+esc(it[2])+'</td></tr>'; }).join('')
+      + '</tbody></table>';
+  });
+
+  // 例题
+  var QS = [
+    { q:'Which of the following is a characteristic of TCP?', opts:['connectionless','unreliable','reliable and connection-oriented','broadcast only'], a:2, ex:'TCP 可靠、面向连接；UDP 不可靠、无连接。' },
+    { q:'（　）is the abbreviation of "Earned Value".', opts:['EV','PV','AC','BAC'], a:0, ex:'EV=Earned Value 挣值；PV 计划值；AC 实际成本；BAC 完工预算。' },
+    { q:'In EVM, which index reflects schedule performance?', opts:['CPI','SPI','CV','SV'], a:1, ex:'SPI=EV/PV 反映进度；CPI=EV/AC 反映成本。' },
+    { q:'（　）means "Software as a Service".', opts:['IaaS','PaaS','SaaS','DaaS'], a:2, ex:'SaaS=Software as a Service 软件即服务；IaaS 基础设施即服务；PaaS 平台即服务。' },
+    { q:'The document that formally authorizes the project is called（　）.', opts:['Project Management Plan','Project Charter','WBS','SOW'], a:1, ex:'Project Charter 项目章程=正式授权项目、标志项目启动。' },
+    { q:'Which of the following is NOT an input to "Develop Project Charter"?', opts:['Business case','Agreements','Project management plan','Enterprise environmental factors'], a:2, ex:'制定项目章程的输入是商业论证、协议、事业环境因素、组织过程资产；项目管理计划是输出（后续过程）。' }
+  ];
+
+  var qb = document.getElementById('quizBox');
+  var chosen = new Array(QS.length).fill(-1);
+  QS.forEach(function(q, i){
+    var h = '<div class="q" data-i="'+i+'"><div class="qt">'+(i+1)+'. '+esc(q.q)+'</div>';
+    q.opts.forEach(function(o, j){
+      h += '<div class="op" data-q="'+i+'" data-o="'+j+'">'+String.fromCharCode(65+j)+'. '+esc(o)+'</div>';
+    });
+    h += '<div class="ex" id="ex'+i+'"><b>正确答案：'+String.fromCharCode(65+q.a)+'</b>　'+esc(q.ex)+'</div></div>';
+    qb.innerHTML += h;
+  });
+  qb.addEventListener('click', function(e){
+    var op = e.target.closest('.op'); if(!op) return;
+    var i = +op.dataset.q, j = +op.dataset.o;
+    if(chosen[i] >= 0) return;
+    chosen[i] = j;
+    var q = QS[i];
+    var wrap = qb.querySelector('.q[data-i="'+i+'"]');
+    wrap.querySelectorAll('.op').forEach(function(el){
+      var o = +el.dataset.o;
+      if(o === q.a) el.classList.add('right');
+      if(o === j && j !== q.a) el.classList.add('wrong');
+    });
+    document.getElementById('ex'+i).classList.add('open');
+  });
+})();
+</script>
+</body>
+</html>
