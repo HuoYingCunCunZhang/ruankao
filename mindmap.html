@@ -43,16 +43,29 @@ body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSys
 .dot{width:9px;height:9px;border-radius:3px;display:inline-block}
 .dot.a{background:#f59e0b}.dot.g{background:#10b981}.dot.b{background:#1f6feb}
 /* 叶子展开的重点内容卡片 */
-.dt{margin:2px 0 10px 22px;padding:10px 12px;background:#fff;border-left:3px solid #f59e0b;border-radius:8px;font-size:13px;line-height:1.75;box-shadow:0 1px 5px rgba(0,0,0,.07)}
+.dt{margin:2px 0 10px 22px;padding:10px 12px;background:#fff;border-left:3px solid #f59e0b;border-radius:8px;font-size:13px;line-height:1.75;box-shadow:0 1px 5px rgba(0,0,0,.07);overflow-x:auto;-webkit-overflow-scrolling:touch}
 .dt-h{font-weight:700;color:#b45309;margin-bottom:6px}
 .dt-mem{margin-top:8px;padding:8px 10px;background:#fef3c7;border-radius:8px;color:#92400e;font-size:12.5px}
 .dt .md-h{font-weight:700;margin:8px 0 4px;color:var(--ink)}
 .dt .md-p{margin:2px 0}
-.dt table{width:100%;border-collapse:collapse;font-size:12px;margin:6px 0}
+.dt table{width:100%;min-width:520px;border-collapse:collapse;font-size:12px;margin:6px 0}
 .dt th,.dt td{border:1px solid #e5eaf3;padding:4px 6px;text-align:left}
 .dt th{background:#f7f9fc}
 .dt ul{margin:4px 0;padding-left:18px}
 .lbl.leaf.has-detail>.txt{color:#b45309}
+/* 搜索 */
+.searchbar{padding:0 0 10px;position:relative}
+.searchbar input{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-size:14px;outline:none;background:#fff}
+.searchbar input:focus{border-color:var(--brand)}
+.sresults{position:absolute;left:0;right:0;top:46px;z-index:30;background:#fff;border:1px solid var(--line);border-radius:10px;max-height:50vh;overflow:auto;display:none;box-shadow:0 8px 24px rgba(0,0,0,.12)}
+.sresults.open{display:block}
+.sr{padding:9px 12px;border-bottom:1px solid var(--line);font-size:13px;cursor:pointer}
+.sr:last-child{border-bottom:none}
+.sr:hover{background:var(--brand-soft)}
+.sr .st{font-weight:600}
+.sr .sd{color:var(--ink3);font-size:12px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sr mark{background:#fde68a;color:#92400e;padding:0 1px}
+.hl{background:#fde68a!important;border-radius:6px}
 </style>
 </head>
 <body>
@@ -69,6 +82,10 @@ body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSys
       <span><i class="dot b"></i>章节/主题</span>
       <span><i class="dot a"></i>考点（叶子）</span>
       <span><i class="dot g"></i>记忆技巧</span>
+    </div>
+    <div class="searchbar">
+      <input id="msearch" placeholder="🔍 搜索节点或卡片内容（如：挣值、质量成本、关键路径）" autocomplete="off">
+      <div class="sresults" id="mresults"></div>
     </div>
     <div class="tree" id="tree"></div>
   </div>
@@ -194,7 +211,7 @@ body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSys
     var hasDetail = !hasKids && node.detail;
     var open = depth < OPEN_DEPTH;
     var h = '<div class="nd">';
-    h += '<div class="lbl ' + (hasKids ? 'branch' : 'leaf') + (hasDetail ? ' has-detail' : '') + (node.root ? ' root' : '') + '" data-d="' + depth + '">';
+    h += '<div class="lbl ' + (hasKids ? 'branch' : 'leaf') + (hasDetail ? ' has-detail' : '') + (node.root ? ' root' : '') + '" data-id="' + node.id + '" data-d="' + depth + '">';
     h += '<span class="tg' + (hasKids ? '' : (hasDetail ? '' : ' leafdot')) + '">' + (hasKids ? (open ? '▾' : '▸') : (hasDetail ? '▸' : '●')) + '</span>';
     h += '<span class="txt">' + esc(node.t) + '</span>';
     h += '</div>';
@@ -209,6 +226,19 @@ body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSys
   }
 
   var tree = buildTree();
+
+  // 建立扁平索引（搜索用，包含卡片中的正文内容）
+  var flat = [], flatMap = {}, counter = 0;
+  function stripHtml(html){ var d = document.createElement('div'); d.innerHTML = html || ''; return d.textContent || ''; }
+  (function walk(node, parents){
+    node.id = 'n' + (counter++);
+    node.parents = parents;
+    node.detailText = stripHtml(node.detail || '');
+    flat.push(node);
+    flatMap[node.id] = node;
+    if(node.c){ node.c.forEach(function(ch){ walk(ch, parents.concat([node.id])); }); }
+  })(tree, []);
+
   var container = document.getElementById('tree');
   container.innerHTML = renderNode(tree, 0);
 
@@ -226,6 +256,58 @@ body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSys
       nxt.style.display = show ? 'block' : 'none';
       var tg2 = lbl.querySelector('.tg'); if(tg2) tg2.textContent = show ? '▾' : '▸';
     }
+  });
+
+  // 搜索：节点标题 + 卡片正文
+  var sInput = document.getElementById('msearch');
+  var sResults = document.getElementById('mresults');
+  function goToNode(id){
+    var n = flatMap[id];
+    if(!n) return;
+    n.parents.forEach(function(pid){
+      var el = container.querySelector('.lbl[data-id="'+pid+'"]');
+      if(el){
+        var kids = el.nextElementSibling;
+        if(kids && kids.classList.contains('kids')){ kids.style.display = 'block'; var tg = el.querySelector('.tg'); if(tg) tg.textContent = '▾'; }
+      }
+    });
+    var el2 = container.querySelector('.lbl[data-id="'+id+'"]');
+    if(!el2) return;
+    var dt = el2.nextElementSibling;
+    if(dt && dt.classList.contains('dt')){ dt.style.display = 'block'; var tg2 = el2.querySelector('.tg'); if(tg2) tg2.textContent = '▾'; }
+    el2.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el2.classList.add('hl');
+    setTimeout(function(){ el2.classList.remove('hl'); }, 2000);
+  }
+  function doSearch(){
+    var kw = sInput.value.trim().toLowerCase();
+    if(!kw){ sResults.classList.remove('open'); sResults.innerHTML = ''; return; }
+    var hits = flat.filter(function(n){
+      return (n.t || '').toLowerCase().indexOf(kw) >= 0 || (n.detailText || '').toLowerCase().indexOf(kw) >= 0;
+    });
+    var html = '';
+    if(!hits.length){ html = '<div class="sr" style="cursor:default;color:var(--ink3)">未找到相关内容</div>'; }
+    else{
+      hits.slice(0, 40).forEach(function(n){
+        var snippet = '';
+        var pos = (n.detailText || '').toLowerCase().indexOf(kw);
+        if(pos >= 0){ snippet = (n.detailText || '').substr(Math.max(0, pos - 18), 70); }
+        html += '<div class="sr" data-id="'+n.id+'"><div class="st">'+esc(n.t)+'</div>'+(snippet?'<div class="sd">…'+esc(snippet)+'…</div>':'')+'</div>';
+      });
+    }
+    sResults.innerHTML = html;
+    sResults.classList.add('open');
+  }
+  sInput.addEventListener('input', doSearch);
+  sResults.addEventListener('click', function(e){
+    var r = e.target.closest('.sr');
+    if(!r || !r.dataset.id) return;
+    goToNode(r.dataset.id);
+    sResults.classList.remove('open');
+    sInput.value = '';
+  });
+  document.addEventListener('click', function(e){
+    if(!e.target.closest('.searchbar')) sResults.classList.remove('open');
   });
 
   window.expandAll = function(){
